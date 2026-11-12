@@ -637,20 +637,78 @@ function section(title) {
   return s;
 }
 
+let saveTimer = null;
+let focusNewKind = null;
+let pinMsg = '';
+
+// guarda todo el formulario (el API reemplaza las listas de golpe)
+function saveConfigNow(newPin) {
+  const kids = collect('kid');
+  const cats = collect('cat');
+  if (!kids.length || !cats.length) return; // sin peques o apartados no se guarda
+  const points = {};
+  for (const f of FACES) {
+    const v = Number($(`input[data-pts="${f.value}"]`).value);
+    if (!Number.isFinite(v)) return; // número a medias: se guardará al completarlo
+    points[f.value] = v;
+  }
+  const rewards = [];
+  for (const row of $$('.rw-row')) {
+    if (row.classList.contains('removed')) continue;
+    const name = $('.txt', row).value.trim();
+    if (!name) continue;
+    const p = Number($('.num', row).value);
+    if (!Number.isFinite(p) || p < 0) return;
+    rewards.push({ name, points: p, shared: $('.sharedbox input', row).checked });
+  }
+  rewards.sort((a, b) => a.points - b.points);
+  const pinEnabled = $('#pin-enabled').checked;
+  withPin(() => api('/api/config', { kids, categories: cats, points, rewards, pinEnabled, newPin })
+    .then(() => {
+      if (newPin) {
+        pin = newPin;
+        localStorage.setItem('caritas_pin', pin);
+        pinMsg = 'PIN cambiado';
+      }
+      ajustesDirty = false;
+      render(true);
+    }));
+}
+
+function scheduleConfigSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveConfigNow(), 600);
+}
+
 function rowEdit(kind, id, name, placeholder) {
   const row = node('div', 'edit-row');
   const input = node('input', 'txt');
   input.value = name || '';
   if (placeholder) input.placeholder = placeholder;
   input.dataset[kind] = id == null ? 'new' : id;
-  input.oninput = () => { ajustesDirty = true; };
+  input.dataset.focuskey = kind + '-' + (id == null ? 'new' : id);
+  if (id == null) {
+    // fila "nuevo": se crea al pulsar Enter o al salir del campo con texto
+    input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); focusNewKind = kind; saveConfigNow(); } };
+    input.onblur = (e) => {
+      if (input.value.trim() && !(e.relatedTarget && e.relatedTarget.closest('.ajustes'))) {
+        focusNewKind = kind;
+        saveConfigNow();
+      }
+    };
+  } else {
+    input.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
+  }
   const del = node('button', 'btn danger icon', '✕');
   if (id == null) del.style.visibility = 'hidden';
   del.onclick = () => {
-    ajustesDirty = true;
+    const remaining = $$('input[data-' + kind + ']').filter((i) => !i.closest('.edit-row').classList.contains('removed') && i.value.trim()).length;
+    if (remaining <= 1) return alert('No puede quedarse sin ' + (kind === 'kid' ? 'peques' : 'apartados'));
     row.classList.add('removed');
     del.disabled = true;
     input.disabled = true;
+    ajustesDirty = true;
+    saveConfigNow();
   };
   row.append(input);
   if (kind === 'kid' && id != null) {
@@ -701,35 +759,51 @@ function rowReward(r, isNew) {
   const input = node('input', 'txt');
   input.value = r.name;
   if (isNew) input.placeholder = 'Nuevo premio…';
+  input.dataset.focuskey = 'rw-' + (isNew ? 'new' : r.id);
+  if (isNew) {
+    input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); focusNewKind = 'rw'; saveConfigNow(); } };
+    input.onblur = (e) => {
+      if (input.value.trim() && !(e.relatedTarget && e.relatedTarget.closest('.ajustes'))) {
+        focusNewKind = 'rw';
+        saveConfigNow();
+      }
+    };
+  } else {
+    input.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
+  }
   const num = node('input', 'num');
   num.type = 'number';
   num.step = '1';
   num.value = r.points;
   num.placeholder = 'pts';
-  input.oninput = () => { ajustesDirty = true; };
-  num.oninput = () => { ajustesDirty = true; };
+  if (!isNew) num.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
   const sh = node('label', 'sharedbox');
   const cb = node('input');
   cb.type = 'checkbox';
   cb.checked = !!r.shared;
   cb.title = 'Compartido: se consigue con los puntos de los dos juntos';
-  cb.onchange = () => { ajustesDirty = true; };
+  cb.onchange = () => { ajustesDirty = true; saveConfigNow(); };
   sh.append(cb, node('span', '', '⇄'));
   const del = node('button', 'btn danger icon', '✕');
   if (isNew) del.style.visibility = 'hidden';
   del.onclick = () => {
-    ajustesDirty = true;
     row.classList.add('removed');
     del.disabled = true;
     input.disabled = true;
     num.disabled = true;
     cb.disabled = true;
+    ajustesDirty = true;
+    saveConfigNow();
   };
   row.append(input, num, sh, del);
   return row;
 }
 
 function renderAjustes() {
+  // devolver el foco al campo que se estaba editando tras un autoguardado
+  const active = document.activeElement;
+  const restoreKey = active && active.dataset && active.dataset.focuskey ? active.dataset.focuskey : null;
+  const restorePos = active && typeof active.selectionStart === 'number' ? active.selectionStart : null;
   ajustesDirty = false;
   app.textContent = '';
   const wrap = node('div', 'ajustes');
@@ -742,7 +816,7 @@ function renderAjustes() {
   for (const c of state.categories) secCats.append(rowEdit('cat', c.id, c.name));
   secCats.append(rowEdit('cat', null, '', 'Nuevo apartado…'));
 
-  const secPts = section('Puntos y objetivo');
+  const secPts = section('Puntos de cada carita');
   const ptsRow = node('div', 'pts-row');
   for (const f of FACES) {
     const lab = node('label', 'field pts-field');
@@ -753,7 +827,8 @@ function renderAjustes() {
     inp.step = '1';
     inp.value = state.points[f.value] || 0;
     inp.dataset.pts = f.value;
-    inp.oninput = () => { ajustesDirty = true; };
+    inp.dataset.focuskey = 'pts-' + f.value;
+    inp.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
     lab.append(face, inp);
     ptsRow.append(lab);
   }
@@ -767,27 +842,50 @@ function renderAjustes() {
   const sw = node('input');
   sw.type = 'checkbox';
   sw.id = 'pin-enabled';
+  sw.dataset.focuskey = 'pin-sw';
   sw.checked = !!state.pinEnabled;
-  sw.onchange = () => { ajustesDirty = true; };
+  sw.onchange = () => { ajustesDirty = true; saveConfigNow(); };
   const swRow = node('label', 'switchrow');
   swRow.append(sw, node('span', '', 'Pedir PIN para poder marcar'));
   secPin.append(swRow);
   const pinRow = node('div', 'pts-row');
   const labP = node('label', 'field');
-  labP.append(node('span', '', 'PIN nuevo (opcional)'));
+  labP.append(node('span', '', 'PIN nuevo (Enter para aplicar)'));
   const inpP = node('input', 'num');
   inpP.type = 'password';
   inpP.id = 'newpin-input';
+  inpP.dataset.focuskey = 'pin-new';
   inpP.oninput = () => { ajustesDirty = true; };
+  inpP.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (inpP.value.trim()) saveConfigNow(inpP.value.trim());
+    }
+  };
   labP.append(inpP);
   pinRow.append(labP);
   secPin.append(pinRow);
+  if (pinMsg) {
+    secPin.append(node('p', 'pin-ok', pinMsg));
+    pinMsg = '';
+  }
 
-  const save = node('button', 'btn primary big', 'Guardar ajustes');
-  save.onclick = saveAjustes;
-
-  wrap.append(secKids, secCats, secPts, secRw, secPin, save);
+  wrap.append(secKids, secCats, secPts, secRw, secPin);
   app.append(wrap);
+
+  if (focusNewKind) {
+    const el = $(`input[data-focuskey="${focusNewKind}-new"]`);
+    if (el) el.focus();
+    focusNewKind = null;
+  } else if (restoreKey) {
+    const el = $(`[data-focuskey="${restoreKey}"]`);
+    if (el) {
+      el.focus();
+      if (restorePos != null && typeof el.setSelectionRange === 'function') {
+        try { el.setSelectionRange(restorePos, restorePos); } catch (e) { /* inputs numéricos no lo soportan */ }
+      }
+    }
+  }
 }
 
 function collect(kind) {
@@ -800,37 +898,6 @@ function collect(kind) {
     out.push(id === 'new' ? { name } : { id: Number(id), name });
   }
   return out;
-}
-
-function saveAjustes() {
-  const kids = collect('kid');
-  const cats = collect('cat');
-  if (!kids.length) return alert('Tiene que haber al menos un peque');
-  if (!cats.length) return alert('Tiene que haber al menos un apartado');
-  const points = {};
-  for (const f of FACES) {
-    const v = Number($(`input[data-pts="${f.value}"]`).value);
-    if (!Number.isFinite(v)) return alert('Puntos inválidos');
-    points[f.value] = v;
-  }
-  const rewards = [];
-  for (const row of $$('.rw-row')) {
-    if (row.classList.contains('removed')) continue;
-    const name = $('.txt', row).value.trim();
-    if (!name) continue;
-    const points = Number($('.num', row).value);
-    if (!Number.isFinite(points) || points < 0) return alert(`Puntos del premio "${name}" inválidos`);
-    rewards.push({ name, points, shared: $('.sharedbox input', row).checked });
-  }
-  rewards.sort((a, b) => a.points - b.points);
-  const pinEnabled = $('#pin-enabled').checked;
-  const newPin = $('#newpin-input').value.trim();
-  withPin(() => api('/api/config', { kids, categories: cats, points, rewards, newPin, pinEnabled })
-    .then(() => {
-      if (newPin) { pin = newPin; localStorage.setItem('caritas_pin', pin); }
-      ajustesDirty = false;
-      render();
-    }));
 }
 
 // ---------- Navegación y conexión ----------

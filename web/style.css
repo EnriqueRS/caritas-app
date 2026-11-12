@@ -296,6 +296,7 @@ button:disabled { opacity: .4; cursor: default; }
 .modal-box h2 { margin: 0; font-size: 1.05em; }
 .pin-input { font-size: 1.2em; text-align: center; letter-spacing: .3em; }
 .pin-error { color: var(--rojo); margin: 0; }
+.pin-ok { color: var(--verde); font-size: .85em; font-weight: 700; margin: 0; }
 
 .confetti {
   position: fixed; width: 8px; height: 8px; z-index: 30; pointer-events: none;
