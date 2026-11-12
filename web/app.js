@@ -488,6 +488,7 @@ function extrasBlock(kid, date) {
       });
   });
   input.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
+  wrapPts.append(sign, minus, ptsIn, plus);
   pick.append(bGreen, bRed);
   form.append(pick, wrapPts, input, save);
 
