@@ -215,9 +215,11 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .extra-pts.g { color: var(--verde); }
 .extra-pts.r { color: var(--rojo); }
 .extra-pts.mu { color: var(--suave); }
-.ptswrap { display: flex; align-items: center; background: var(--panel2); border: 1px solid var(--linea); border-radius: 10px; padding-right: .5em; }
+.ptswrap { display: flex; align-items: center; background: var(--panel2); border: 1px solid var(--linea); border-radius: 10px; padding: 0 .4em; }
 .ptswrap > * + * { margin-left: .2rem; }
-.ptswrap .num { border: none; background: none; width: 5ch; padding-left: 0; }
+.ptswrap .num { border: none; background: none; width: 3.5ch; padding-left: 0; text-align: center; font-weight: 700; }
+.pts-step { background: none; border: none; color: var(--crema); font: inherit; font-weight: 700; cursor: pointer; padding: .3em .35em; border-radius: 8px; }
+.pts-step:hover { background: var(--linea); }
 .pts-sign { font-weight: 700; color: var(--suave); }
 .pts-sign.g { color: var(--verde); }
 .pts-sign.r { color: var(--rojo); }

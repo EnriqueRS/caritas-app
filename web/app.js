@@ -448,11 +448,18 @@ function extrasBlock(kid, date) {
   bRed.title = 'Roja: resta puntos';
   const wrapPts = node('div', 'ptswrap');
   const sign = node('span', 'pts-sign g', '+');
+  const minus = node('button', 'pts-step', '−');
   const ptsIn = node('input', 'num');
   ptsIn.type = 'number';
   ptsIn.min = '0';
   ptsIn.step = '1';
-  ptsIn.value = state.points[2] || 2;
+  let mag = state.points[2] || 2;
+  const paintPts = () => { ptsIn.value = mag; };
+  paintPts();
+  minus.onclick = () => { mag = Math.max(0, mag - 1); paintPts(); };
+  const plus = node('button', 'pts-step', '+');
+  plus.onclick = () => { mag += 1; paintPts(); };
+  ptsIn.oninput = () => { mag = Math.max(0, Math.round(Number(ptsIn.value) || 0)); };
   const setSign = () => {
     sign.textContent = choice === 2 ? '+' : '−';
     sign.classList.toggle('g', choice === 2);
@@ -467,11 +474,12 @@ function extrasBlock(kid, date) {
     const r = bGreen.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
-    const n = Math.abs(Math.round(Number(ptsIn.value) || 0));
-    return api('/api/extra', { kid_id: kid.id, date, value: choice, pts: choice === 2 ? n : -n, note: input.value.trim() })
+    const n = choice === 2 ? mag : -mag;
+    return api('/api/extra', { kid_id: kid.id, date, value: choice, pts: n, note: input.value.trim() })
       .then(() => {
         input.value = '';
-        ptsIn.value = state.points[2] || 2;
+        mag = state.points[2] || 2;
+        paintPts();
         setSign();
         form.classList.add('hidden');
         if (choice === 2) { confettiAt(cx, cy); flashKidPanel(kid.id); }
