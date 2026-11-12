@@ -1,0 +1,6 @@
+# datos privados de la familia (base de datos, fotos, PIN)
+data/
+
+# dependencias y artefactos de build
+node_modules/
+webos/dist/

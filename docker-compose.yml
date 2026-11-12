@@ -1,0 +1,12 @@
+services:
+  caritas:
+    build: .
+    image: caritas
+    container_name: caritas
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - ./data:/app/data

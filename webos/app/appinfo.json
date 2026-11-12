@@ -1,0 +1,12 @@
+{
+  "id": "com.home.caritas",
+  "version": "1.0.0",
+  "vendor": "home",
+  "type": "web",
+  "requiredACG": [],
+  "main": "index.html",
+  "title": "Caritas",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#0f172a"
+}

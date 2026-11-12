@@ -1,0 +1,16 @@
+{
+  "name": "caritas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Registro nocturno de conducta de los peques: caritas, histórico y puntos",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "icons": "node scripts/gen-icons.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
