@@ -218,6 +218,8 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .ptswrap { display: flex; flex-direction: column; align-items: center; background: var(--panel2); border: 1px solid var(--linea); border-radius: 10px; padding: .1em .3em; }
 .ptswrap > * + * { margin-top: .05em; }
 .ptswrap .num { border: none; background: none; width: 3ch; padding: 0; text-align: center; font-weight: 700; }
+.ptswrap .num.g { color: var(--verde); }
+.ptswrap .num.r { color: var(--rojo); }
 .ptswrap input[type='number']::-webkit-inner-spin-button,
 .ptswrap input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .pts-mid { display: flex; align-items: center; }

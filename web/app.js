@@ -465,6 +465,8 @@ function extrasBlock(kid, date) {
     sign.textContent = choice === 2 ? '+' : '−';
     sign.classList.toggle('g', choice === 2);
     sign.classList.toggle('r', choice === 0);
+    ptsIn.classList.toggle('g', choice === 2);
+    ptsIn.classList.toggle('r', choice === 0);
   };
   setSign();
   bGreen.onclick = () => { choice = 2; bGreen.classList.add('sel'); bRed.classList.remove('sel'); setSign(); };
