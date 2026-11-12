@@ -5,7 +5,7 @@ El marcador nocturno de la familia: cada noche se valora a Martín y Ángel con 
 ## Qué hace
 
 - **Esta noche**: una tarjeta por peque con el semáforo de cada apartado (Comida, Comportamiento, Histerias, Orden de habitación…), notas por hueco, **extras verdes o rojos para imprevistos** y foto de cada peque.
-- **Bombillas de la semana**: siete luces bajo cada nombre (lunes a domingo) encendidas al color de su peor carita de cada día — la semana se lee de un vistazo.
+- **Bombillas de la semana**: siete luces bajo cada nombre (lunes a domingo). Cada día se colorea por sus puntos frente a los que había en juego: verde desde el 85%, amarillo desde el 40% y rojo por debajo (los extras suman). La semana se lee de un vistazo.
 - **Premios**: los puntos de la semana (verde 2, amarillo 1, rojo 0, configurables) desbloquean premios escalonados: *Pizza el sábado* a 8, *Croissants el sábado* a 12, *Más tiempo dibujos* a 15, *Más tiempo consola* a 20. Al llegar, el billete se sella.
 - **Histórico**: calendario del mes con los dos niños lado a lado; cada día se abre para consultar o corregir.
 - **Gráficas**: puntos por semana y reparto de caritas por apartado de los últimos 30 días.

@@ -247,17 +247,26 @@ function kidCard(kid, date) {
   const idBox = node('div', 'kid-id');
   idBox.append(node('h2', '', kid.name));
   const lamps = node('div', 'week-lamps');
+  const maxInPlay = state.categories.length * (state.points[2] || 0);
   for (let i = 0; i < 7; i++) {
     const d = new Date(state.week.from + 'T12:00:00Z');
     d.setUTCDate(d.getUTCDate() + i);
     const dstr = d.toISOString().slice(0, 10);
-    const dayRecs = state.records.filter((r) => r.kid_id === kid.id && r.date === dstr && r.value !== null);
+    const marked = state.records.filter((r) => r.kid_id === kid.id && r.date === dstr && r.value !== null);
     let cls = 'dayl';
-    if (dayRecs.length) cls += ' d' + Math.min.apply(null, dayRecs.map((r) => r.value));
-    else if (dstr === state.today) cls += ' dt';
+    // bombilla por puntos del día frente a los que había en juego:
+    // verde ≥ 85% del máximo, amarillo ≥ 40%, rojo por debajo (15 en juego: 13-15 / 6-12 / <6).
+    // solo se colorea el día completo; los extras suman aunque no estén "en juego"
+    if (marked.length === state.categories.length && maxInPlay > 0) {
+      const pts = marked.reduce((s, r) => s + (state.points[r.value] || 0), 0)
+        + state.extras.filter((e) => e.kid_id === kid.id && e.date === dstr)
+            .reduce((s, e) => s + (state.points[e.value] || 0), 0);
+      const ratio = pts / maxInPlay;
+      cls += ratio >= 0.85 ? ' d2' : ratio >= 0.4 ? ' d1' : ' d0';
+    } else if (dstr === state.today) cls += ' dt';
     const lamp = node('span', cls);
     lamp.title = new Date(dstr + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })
-      + (dayRecs.length ? '' : ' · sin marcar');
+      + (marked.length === state.categories.length ? '' : ' · sin completar');
     lamps.append(lamp);
   }
   idBox.append(lamps);
