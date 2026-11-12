@@ -32,6 +32,7 @@ db.exec(`
 `);
 
 try { db.exec('ALTER TABLE kids ADD COLUMN photo TEXT'); } catch { /* ya existe */ }
+try { db.exec('ALTER TABLE extras ADD COLUMN pts INTEGER'); } catch { /* ya existe */ }
 
 const DEFAULT_REWARDS = [
   { name: 'Pizza el sábado', points: 8 },
@@ -93,6 +94,9 @@ const SELECT_EXTRAS = `
   WHERE e.date BETWEEN ? AND ?
   ORDER BY e.date, e.kid_id, e.id`;
 
+// los extras antiguos no tenían puntos propios: verde +2, roja 0
+const mapExtra = (e) => Object.assign({}, e, { pts: e.pts == null ? (e.value === 2 ? 2 : 0) : e.pts });
+
 function getState() {
   const { from, to } = weekRange(madridToday());
   return {
@@ -101,10 +105,11 @@ function getState() {
     kids: db.prepare('SELECT * FROM kids ORDER BY sort, id').all(),
     categories: db.prepare('SELECT * FROM categories ORDER BY sort, id').all(),
     records: db.prepare(SELECT_RECORDS).all(from, to),
-    extras: db.prepare(SELECT_EXTRAS).all(from, to),
+    extras: db.prepare(SELECT_EXTRAS).all(from, to).map(mapExtra),
     points: getPoints(),
     rewards: getRewards(),
     pinEnabled: getSetting('pinEnabled') === '1',
+    tema: getSetting('tema') === 'claro' ? 'claro' : 'oscuro',
   };
 }
 
@@ -145,7 +150,7 @@ app.get('/api/history', (req, res) => {
   if (!DATE_RE.test(String(from)) || !DATE_RE.test(String(to))) {
     return res.status(400).json({ error: 'from/to deben ser YYYY-MM-DD' });
   }
-  res.json({ from, to, records: db.prepare(SELECT_RECORDS).all(from, to), extras: db.prepare(SELECT_EXTRAS).all(from, to) });
+  res.json({ from, to, records: db.prepare(SELECT_RECORDS).all(from, to), extras: db.prepare(SELECT_EXTRAS).all(from, to).map(mapExtra) });
 });
 
 // Marca una carita o guarda la nota de un hueco (peque × apartado × día)
@@ -178,11 +183,15 @@ app.post('/api/extra', requirePin, (req, res) => {
   const date = String(req.body.date || '');
   const value = Number(req.body.value);
   const note = String(req.body.note ?? '');
+  let pts = req.body.pts === undefined || req.body.pts === null || req.body.pts === '' ? null : Number(req.body.pts);
   if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Fecha inválida' });
   if (![2, 0].includes(value)) return res.status(400).json({ error: 'El extra solo puede ser verde o roja' });
   if (!db.prepare('SELECT 1 FROM kids WHERE id = ?').get(kid_id)) return res.status(400).json({ error: 'Peque desconocido' });
-  db.prepare('INSERT INTO extras (kid_id, date, value, note, updated_at) VALUES (?, ?, ?, ?, ?)')
-    .run(kid_id, date, value, note, new Date().toISOString());
+  if (pts === null || !Number.isFinite(pts)) pts = value === 2 ? (getPoints()[2] || 2) : 0;
+  // verde suma, roja resta: el signo lo manda el color
+  pts = Math.round(Math.abs(pts)) * (value === 2 ? 1 : -1);
+  db.prepare('INSERT INTO extras (kid_id, date, value, note, pts, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(kid_id, date, value, note, pts, new Date().toISOString());
   broadcast();
   res.json({ ok: true });
 });
@@ -224,7 +233,7 @@ app.post('/api/photo/:id/remove', requirePin, (req, res) => {
 
 // Ajustes: peques, apartados, puntos, objetivo y PIN (cada lista se reemplaza de golpe)
 app.post('/api/config', requirePin, (req, res) => {
-  const { kids, categories, points, rewards, newPin, pinEnabled } = req.body;
+  const { kids, categories, points, rewards, newPin, pinEnabled, tema } = req.body;
 
   const syncRows = (rows, table) => {
     if (!Array.isArray(rows)) return;
@@ -261,6 +270,7 @@ app.post('/api/config', requirePin, (req, res) => {
       setSetting('rewards', JSON.stringify(list));
     }
     if (typeof pinEnabled === 'boolean') setSetting('pinEnabled', pinEnabled ? '1' : '0');
+    if (tema === 'claro' || tema === 'oscuro') setSetting('tema', tema);
     if (newPin && String(newPin).trim()) setSetting('pin', String(newPin).trim());
   })();
 

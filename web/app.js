@@ -124,7 +124,7 @@ const recordFor = (kidId, catId, date) =>
 function weekPoints(kidId) {
   let sum = 0;
   for (const r of state.records) if (r.kid_id === kidId) sum += state.points[r.value] || 0;
-  for (const e of state.extras || []) if (e.kid_id === kidId) sum += state.points[e.value] || 0;
+  for (const e of state.extras || []) if (e.kid_id === kidId) sum += e.pts || 0;
   return sum;
 }
 
@@ -224,9 +224,19 @@ function tapOk(key) {
   return true;
 }
 
+// aplica el tema guardado en Ajustes a toda la página
+function applyTheme() {
+  if (!state) return;
+  const claro = state.tema === 'claro';
+  document.documentElement.classList.toggle('tema-claro', claro);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = claro ? '#F3F1EA' : '#141519';
+}
+
 let lastRenderKey = '';
 
 function render(force) {
+  applyTheme();
   if (!state || !state.kids.length) return;
   const json = view + '|' + JSON.stringify([state.kids, state.categories, state.records, state.extras, state.points, state.rewards, state.pinEnabled]);
   if (!force && json === lastRenderKey) return; // nada cambió: no repintar (evita parpadeos)
@@ -275,7 +285,7 @@ function kidCard(kid, date) {
     if (marked.length === state.categories.length && maxInPlay > 0) {
       const pts = marked.reduce((s, r) => s + (state.points[r.value] || 0), 0)
         + state.extras.filter((e) => e.kid_id === kid.id && e.date === dstr)
-            .reduce((s, e) => s + (state.points[e.value] || 0), 0);
+            .reduce((s, e) => s + (e.pts || 0), 0);
       const ratio = pts / maxInPlay;
       cls += ratio >= 0.85 ? ' d2' : ratio >= 0.4 ? ' d1' : ' d0';
     } else if (dstr === state.today) cls += ' dt';
@@ -350,7 +360,10 @@ function extrasBlock(kid, date) {
     del.append(icon('x'));
     del.title = 'Quitar';
     del.onclick = () => withPin(() => api('/api/extra', { id: e.id }, 'DELETE'));
-    item.append(light, node('span', 'extra-note', e.note || '(sin motivo)'), del);
+    const cls = e.pts > 0 ? 'g' : e.pts < 0 ? 'r' : 'mu';
+    const sign = e.pts > 0 ? '+' : e.pts < 0 ? '−' : '±';
+    item.append(light, node('span', 'extra-note', e.note || '(sin motivo)'),
+      node('span', `extra-pts ${cls}`, sign + Math.abs(e.pts)), del);
     list.append(item);
   }
   wrap.append(list);
@@ -360,12 +373,24 @@ function extrasBlock(kid, date) {
   const pick = node('div', 'faces');
   const bGreen = node('button', 'face light-2 sel');
   bGreen.innerHTML = LIGHT_SVG[2];
-  bGreen.title = 'Verde';
+  bGreen.title = 'Verde: suma puntos';
   const bRed = node('button', 'face light-0');
   bRed.innerHTML = LIGHT_SVG[0];
-  bRed.title = 'Roja';
-  bGreen.onclick = () => { choice = 2; bGreen.classList.add('sel'); bRed.classList.remove('sel'); };
-  bRed.onclick = () => { choice = 0; bRed.classList.add('sel'); bGreen.classList.remove('sel'); };
+  bRed.title = 'Roja: resta puntos';
+  const wrapPts = node('div', 'ptswrap');
+  const sign = node('span', 'pts-sign g', '+');
+  const ptsIn = node('input', 'num');
+  ptsIn.type = 'number';
+  ptsIn.min = '0';
+  ptsIn.step = '1';
+  ptsIn.value = state.points[2] || 2;
+  const setSign = () => {
+    sign.textContent = choice === 2 ? '+' : '−';
+    sign.classList.toggle('g', choice === 2);
+    sign.classList.toggle('r', choice === 0);
+  };
+  bGreen.onclick = () => { choice = 2; bGreen.classList.add('sel'); bRed.classList.remove('sel'); setSign(); };
+  bRed.onclick = () => { choice = 0; bRed.classList.add('sel'); bGreen.classList.remove('sel'); setSign(); };
   const input = node('input', 'note-input');
   input.placeholder = 'Motivo del extra…';
   const save = node('button', 'btn primary small', 'Añadir');
@@ -373,9 +398,12 @@ function extrasBlock(kid, date) {
     const r = bGreen.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
-    return api('/api/extra', { kid_id: kid.id, date, value: choice, note: input.value.trim() })
+    const n = Math.abs(Math.round(Number(ptsIn.value) || 0));
+    return api('/api/extra', { kid_id: kid.id, date, value: choice, pts: choice === 2 ? n : -n, note: input.value.trim() })
       .then(() => {
         input.value = '';
+        ptsIn.value = state.points[2] || 2;
+        setSign();
         form.classList.add('hidden');
         if (choice === 2) confettiAt(cx, cy);
         else shakeKidPanel(kid.id);
@@ -383,7 +411,7 @@ function extrasBlock(kid, date) {
   });
   input.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
   pick.append(bGreen, bRed);
-  form.append(pick, input, save);
+  form.append(pick, wrapPts, input, save);
 
   const addBtn = node('button', 'btn small');
   addBtn.append(icon('plus'), node('span', '', 'Extra'));
@@ -579,7 +607,7 @@ function renderGraf() {
     const w = weekMonday(e.date);
     if (!weeks.has(w)) weeks.set(w, {});
     const m = weeks.get(w);
-    m[e.kid_id] = (m[e.kid_id] || 0) + (state.points[e.value] || 0);
+    m[e.kid_id] = (m[e.kid_id] || 0) + (e.pts || 0);
   }
   const weekKeys = [...weeks.keys()].sort();
   const max = Math.max(1, ...weekKeys.map((w) => Math.max(1, ...state.kids.map((k) => weeks.get(w)[k.id] || 0))));
@@ -664,7 +692,7 @@ let focusNewKind = null;
 let pinMsg = '';
 
 // guarda todo el formulario (el API reemplaza las listas de golpe)
-function saveConfigNow(newPin) {
+function saveConfigNow(extra) {
   const kids = collect('kid');
   const cats = collect('cat');
   if (!kids.length || !cats.length) return; // sin peques o apartados no se guarda
@@ -685,10 +713,13 @@ function saveConfigNow(newPin) {
   }
   rewards.sort((a, b) => a.points - b.points);
   const pinEnabled = $('#pin-enabled').checked;
-  withPin(() => api('/api/config', { kids, categories: cats, points, rewards, pinEnabled, newPin })
+  const body = { kids, categories: cats, points, rewards, pinEnabled };
+  if (extra && extra.newPin) body.newPin = extra.newPin;
+  if (extra && extra.tema) body.tema = extra.tema;
+  withPin(() => api('/api/config', body)
     .then(() => {
-      if (newPin) {
-        pin = newPin;
+      if (extra && extra.newPin) {
+        pin = extra.newPin;
         localStorage.setItem('caritas_pin', pin);
         pinMsg = 'PIN cambiado';
       }
@@ -833,6 +864,15 @@ function renderAjustes() {
   app.textContent = '';
   const wrap = node('div', 'ajustes');
 
+  const secTema = section('Tema');
+  const seg = node('div', 'seg');
+  [['oscuro', 'Oscuro'], ['claro', 'Claro']].forEach(([val, label]) => {
+    const b = node('button', 'seg-btn' + ((state.tema || 'oscuro') === val ? ' active' : ''), label);
+    b.onclick = () => { ajustesDirty = true; saveConfigNow({ tema: val }); };
+    seg.append(b);
+  });
+  secTema.append(seg);
+
   const secKids = section('Peques');
   for (const k of state.kids) secKids.append(rowEdit('kid', k.id, k.name));
   secKids.append(rowEdit('kid', null, '', 'Nuevo peque…'));
@@ -884,7 +924,7 @@ function renderAjustes() {
   inpP.onkeydown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (inpP.value.trim()) saveConfigNow(inpP.value.trim());
+      if (inpP.value.trim()) saveConfigNow({ newPin: inpP.value.trim() });
     }
   };
   labP.append(inpP);
@@ -895,7 +935,7 @@ function renderAjustes() {
     pinMsg = '';
   }
 
-  wrap.append(secKids, secCats, secPts, secRw, secPin);
+  wrap.append(secTema, secKids, secCats, secPts, secRw, secPin);
   app.append(wrap);
 
   if (focusNewKind) {

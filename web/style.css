@@ -31,7 +31,7 @@
   --panel-a: #1C1E24; --panel-b: #131418; --panel: #1C1E24; --panel2: #262932; --linea: #2E3138;
   --crema: #EFEDE8; --suave: #9A9DA6;
   --verde: #45D183; --amarillo: #F5C34B; --rojo: #F1634C; --oro: #E7B75F;
-  --tinta: #141519;
+  --tinta: #141519; --apagado: #101115;
   --sombra: 0 12px 30px rgba(0, 0, 0, .55);
   --velo: rgba(10, 11, 14, .78);
   --cabecera: rgba(20, 21, 25, .82);
@@ -42,6 +42,25 @@
   --oro-suave: rgba(231, 183, 95, .08);
   --oro-tinta: #26190A;
   --activo-tinta: #141519;
+}
+
+html.tema-claro { color-scheme: light; }
+html.tema-claro {
+  --fondo: #F3F1EA; --fondo-a: #FFFFFF; --fondo-b: #EFEBE0;
+  --panel-a: #FFFFFF; --panel-b: #F7F5EE; --panel: #FFFFFF; --panel2: #EAE6DB; --linea: #DDD8CC;
+  --crema: #23282B; --suave: #7A7F76;
+  --verde: #1FA35D; --amarillo: #D19A16; --rojo: #D9452F; --oro: #B9862B;
+  --tinta: #23282B; --apagado: #E8E4D9;
+  --sombra: 0 10px 24px rgba(35, 40, 43, .12);
+  --velo: rgba(35, 40, 43, .45);
+  --cabecera: rgba(243, 241, 234, .9);
+  --fila: rgba(35, 40, 43, .08);
+  --verde-glow: rgba(31, 163, 93, .45);
+  --amarillo-glow: rgba(209, 154, 22, .45);
+  --rojo-glow: rgba(217, 69, 47, .45);
+  --oro-suave: rgba(185, 134, 43, .12);
+  --oro-tinta: #2E1F05;
+  --activo-tinta: #F3F1EA;
 }
 * { box-sizing: border-box; }
 html { color-scheme: dark; }
@@ -107,7 +126,7 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .avatar-thumb.ph { display: flex; align-items: center; justify-content: center; background: var(--panel2); color: var(--suave); font-size: .85em; }
 
 .week-lamps { display: flex; gap: 7px; gap: .35rem; margin-top: .3rem; align-items: center; }
-.dayl { width: .8em; height: .8em; border-radius: 50%; background: var(--tinta); border: 1px solid var(--linea); }
+.dayl { width: .8em; height: .8em; border-radius: 50%; background: var(--apagado); border: 1px solid var(--linea); }
 .dayl.d2 { background: var(--verde); border-color: transparent; }
 .dayl.d1 { background: var(--amarillo); border-color: transparent; }
 .dayl.d0 { background: var(--rojo); border-color: transparent; }
@@ -123,7 +142,7 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
   color: var(--suave); text-transform: uppercase; letter-spacing: .18em;
 }
 
-.bar { height: .55em; background: var(--tinta); border-radius: 999px; overflow: hidden; }
+.bar { height: .55em; background: var(--apagado); border-radius: 999px; overflow: hidden; }
 .bar i { display: block; height: 100%; width: 0; background: var(--oro); border-radius: inherit; transition: width .5s ease; }
 .bar i.ok { background: var(--verde); }
 .reward { margin: .5rem 0 0; color: var(--suave); font-size: .9em; }
@@ -188,6 +207,23 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .extras { margin-top: .9rem; border-top: 1px dashed var(--linea); padding-top: .6rem; }
 .extras h3 { margin: 0 0 .4rem; font-size: .72em; color: var(--suave); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
 .extra-item { display: flex; align-items: center; gap: .55rem; padding: .22rem 0; }
+.extra-pts { font-weight: 700; font-size: .85em; flex: none; }
+.extra-pts.g { color: var(--verde); }
+.extra-pts.r { color: var(--rojo); }
+.extra-pts.mu { color: var(--suave); }
+.ptswrap { display: flex; align-items: center; background: var(--panel2); border: 1px solid var(--linea); border-radius: 10px; padding-right: .5em; }
+.ptswrap > * + * { margin-left: .2rem; }
+.ptswrap .num { border: none; background: none; width: 5ch; padding-left: 0; }
+.pts-sign { font-weight: 700; color: var(--suave); }
+.pts-sign.g { color: var(--verde); }
+.pts-sign.r { color: var(--rojo); }
+.seg { display: flex; }
+.seg-btn {
+  background: none; border: 1px solid var(--linea); color: var(--suave);
+  border-radius: 999px; padding: .4em 1.1em; font: inherit; font-weight: 600; cursor: pointer;
+}
+.seg-btn + .seg-btn { margin-left: .4rem; }
+.seg-btn.active { background: var(--crema); color: var(--activo-tinta); border-color: var(--crema); }
 .extra-light { width: 1.7em; height: 1.7em; flex: none; }
 .extra-light svg { width: 100%; height: 100%; display: block; border-radius: 50%; }
 .extra-note { flex: 1; font-size: .95em; }
