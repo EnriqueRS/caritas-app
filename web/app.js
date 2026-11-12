@@ -13,6 +13,21 @@ const LIGHT_SVG = {
   0: '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="bg" cx="50" cy="50" r="46"/><circle class="f" cx="35" cy="42" r="7"/><circle class="f" cx="65" cy="42" r="7"/><path class="f" d="M31 72 Q50 52 69 72" fill="none" stroke-width="8" stroke-linecap="round"/></svg>',
 };
 
+// Iconos de línea (nada de emoticonos)
+const ICONS = {
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4.5-1L20 7.5a2.1 2.1 0 0 0-3-3L5.5 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10l-3-3M17 16H7l3 3"/></svg>',
+};
+
+function icon(name) {
+  const s = node('span', 'ic');
+  s.innerHTML = ICONS[name] || '';
+  return s;
+}
+
 let state = null;
 let view = 'hoy';
 let histMonth = null; // {y, m} con m de 1 a 12
@@ -296,7 +311,11 @@ function rewardsBlock(kid) {
   for (const r of rewards) {
     const row = node('div', 'rw' + (reached(r) ? ' ok' : ''));
     row.append(node('span', 'rw-name', r.name));
-    if (r.shared) row.append(node('span', 'rw-shared', '⇄ compartido'));
+    if (r.shared) {
+      const chip = node('span', 'rw-shared');
+      chip.append(icon('swap'), node('span', '', 'compartido'));
+      row.append(chip);
+    }
     row.append(node('span', 'rw-pts', `${r.points} pts`), node('span', 'rw-mark', reached(r) ? '✓' : '·'));
     wrap.append(row);
   }
@@ -315,7 +334,7 @@ function rewardsBlock(kid) {
   wrap.append(bar);
   wrap.append(node('p', 'reward',
     next ? `A ${goal - mine} pts de: ${next.name}${next.shared ? ' (compartido, puntúan los dos juntos)' : ''}`
-         : `🎉 Máximo conseguido: ${rewards[rewards.length - 1].name}`));
+         : `Máximo conseguido: ${rewards[rewards.length - 1].name}`));
   return wrap;
 }
 
@@ -327,7 +346,8 @@ function extrasBlock(kid, date) {
     const item = node('div', 'extra-item');
     const light = node('span', `extra-light light-${e.value}`);
     light.innerHTML = LIGHT_SVG[e.value];
-    const del = node('button', 'btn danger icon', '✕');
+    const del = node('button', 'btn danger icon');
+    del.append(icon('x'));
     del.title = 'Quitar';
     del.onclick = () => withPin(() => api('/api/extra', { id: e.id }, 'DELETE'));
     item.append(light, node('span', 'extra-note', e.note || '(sin motivo)'), del);
@@ -365,7 +385,8 @@ function extrasBlock(kid, date) {
   pick.append(bGreen, bRed);
   form.append(pick, input, save);
 
-  const addBtn = node('button', 'btn small', '＋ Extra');
+  const addBtn = node('button', 'btn small');
+  addBtn.append(icon('plus'), node('span', '', 'Extra'));
   addBtn.onclick = () => { form.classList.toggle('hidden'); input.focus(); };
   wrap.append(addBtn, form);
   return wrap;
@@ -401,8 +422,9 @@ function catRow(kidId, cat, date) {
     };
     faces.append(b);
   }
-  const noteBtn = node('button', 'note-btn' + (rec && rec.note ? ' has-note' : ''), '✎');
+  const noteBtn = node('button', 'note-btn' + (rec && rec.note ? ' has-note' : ''));
   noteBtn.title = 'Nota';
+  noteBtn.append(icon('pencil'));
   noteBtn.onclick = () => toggleNoteInput(row, kidId, cat, date, rec);
   row.append(faces, noteBtn);
   return row;
@@ -699,7 +721,8 @@ function rowEdit(kind, id, name, placeholder) {
   } else {
     input.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
   }
-  const del = node('button', 'btn danger icon', '✕');
+  const del = node('button', 'btn danger icon');
+  del.append(icon('x'));
   if (id == null) del.style.visibility = 'hidden';
   del.onclick = () => {
     const remaining = $$('input[data-' + kind + ']').filter((i) => !i.closest('.edit-row').classList.contains('removed') && i.value.trim()).length;
@@ -728,14 +751,15 @@ function rowEdit(kind, id, name, placeholder) {
       } else {
         cell.append(node('span', 'avatar-thumb ph', kid ? kid.name.charAt(0) : '?'));
       }
-      const up = node('button', 'btn icon', '📷');
+      const up = node('button', 'btn icon');
       up.title = 'Cambiar foto';
-      up.onclick = () => file.click();
+      up.append(icon('camera'));
       cell.append(up);
       if (kid && kid.photo) {
-        const rm = node('button', 'btn danger icon', '✕');
+        const rm = node('button', 'btn danger icon');
         rm.title = 'Quitar foto';
         rm.onclick = () => withPin(() => api(`/api/photo/${id}/remove`, {}));
+        rm.append(icon('x'));
         cell.append(rm);
       }
     };
@@ -784,7 +808,8 @@ function rowReward(r, isNew) {
   cb.title = 'Compartido: se consigue con los puntos de los dos juntos';
   cb.onchange = () => { ajustesDirty = true; saveConfigNow(); };
   sh.append(cb, node('span', '', '⇄'));
-  const del = node('button', 'btn danger icon', '✕');
+  const del = node('button', 'btn danger icon');
+  del.append(icon('x'));
   if (isNew) del.style.visibility = 'hidden';
   del.onclick = () => {
     row.classList.add('removed');
