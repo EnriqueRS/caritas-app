@@ -251,7 +251,11 @@ app.post('/api/config', requirePin, (req, res) => {
     }
     if (Array.isArray(rewards)) {
       const list = rewards
-        .map((r) => ({ name: String(r?.name || '').trim(), points: Number(r?.points) }))
+        .map((r) => ({
+          name: String(r?.name || '').trim(),
+          points: Number(r?.points),
+          shared: r?.shared === true,
+        }))
         .filter((r) => r.name && Number.isFinite(r.points) && r.points >= 0)
         .sort((a, b) => a.points - b.points);
       setSetting('rewards', JSON.stringify(list));

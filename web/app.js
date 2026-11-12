@@ -276,7 +276,7 @@ function kidCard(kid, date) {
   score.append(node('span', '', 'pts'));
   head.append(score);
   card.append(head);
-  card.append(rewardsBlock(pts));
+  card.append(rewardsBlock(kid));
 
   const rows = node('div', 'rows');
   for (const cat of state.categories) rows.append(catRow(kid.id, cat, date));
@@ -285,21 +285,28 @@ function kidCard(kid, date) {
   return card;
 }
 
-function rewardsBlock(pts) {
+function rewardsBlock(kid) {
+  const pts = weekPoints(kid.id);
+  const pool = state.kids.reduce((s, k) => s + weekPoints(k.id), 0); // puntos de los dos juntos
   const wrap = node('div', 'rewards');
   const rewards = state.rewards || [];
   if (!rewards.length) return wrap;
-  const done = rewards.filter((r) => pts >= r.points);
-  const next = rewards.find((r) => pts < r.points);
+  const reached = (r) => (r.shared ? pool : pts) >= r.points;
+  const next = rewards.find((r) => !reached(r));
   for (const r of rewards) {
-    const row = node('div', 'rw' + (pts >= r.points ? ' ok' : ''));
-    row.append(node('span', 'rw-name', r.name), node('span', 'rw-pts', `${r.points} pts`),
-      node('span', 'rw-mark', pts >= r.points ? '✓' : '·'));
+    const row = node('div', 'rw' + (reached(r) ? ' ok' : ''));
+    row.append(node('span', 'rw-name', r.name));
+    if (r.shared) row.append(node('span', 'rw-shared', '⇄ compartido'));
+    row.append(node('span', 'rw-pts', `${r.points} pts`), node('span', 'rw-mark', reached(r) ? '✓' : '·'));
     wrap.append(row);
   }
-  const base = done.length ? done[done.length - 1].points : 0;
-  const goal = next ? next.points : rewards[rewards.length - 1].points;
-  const pct = Math.max(0, Math.min(100, Math.round((100 * (pts - base)) / Math.max(1, goal - base))));
+  const base = (() => {
+    const done = rewards.filter(reached);
+    return done.length ? done[done.length - 1].points : 0;
+  })();
+  const goal = next ? next.points : (rewards[rewards.length - 1] || {}).points || 0;
+  const mine = next && next.shared ? pool : pts;
+  const pct = Math.max(0, Math.min(100, Math.round((100 * (mine - base)) / Math.max(1, goal - base))));
   const fill = node('i');
   fill.style.width = pct + '%';
   if (!next) fill.classList.add('ok');
@@ -307,7 +314,8 @@ function rewardsBlock(pts) {
   bar.append(fill);
   wrap.append(bar);
   wrap.append(node('p', 'reward',
-    next ? `A ${goal - pts} pts de: ${next.name}` : `🎉 Máximo conseguido: ${rewards[rewards.length - 1].name}`));
+    next ? `A ${goal - mine} pts de: ${next.name}${next.shared ? ' (compartido, puntúan los dos juntos)' : ''}`
+         : `🎉 Máximo conseguido: ${rewards[rewards.length - 1].name}`));
   return wrap;
 }
 
@@ -700,6 +708,13 @@ function rowReward(r, isNew) {
   num.placeholder = 'pts';
   input.oninput = () => { ajustesDirty = true; };
   num.oninput = () => { ajustesDirty = true; };
+  const sh = node('label', 'sharedbox');
+  const cb = node('input');
+  cb.type = 'checkbox';
+  cb.checked = !!r.shared;
+  cb.title = 'Compartido: se consigue con los puntos de los dos juntos';
+  cb.onchange = () => { ajustesDirty = true; };
+  sh.append(cb, node('span', '', '⇄'));
   const del = node('button', 'btn danger icon', '✕');
   if (isNew) del.style.visibility = 'hidden';
   del.onclick = () => {
@@ -708,8 +723,9 @@ function rowReward(r, isNew) {
     del.disabled = true;
     input.disabled = true;
     num.disabled = true;
+    cb.disabled = true;
   };
-  row.append(input, num, del);
+  row.append(input, num, sh, del);
   return row;
 }
 
@@ -804,7 +820,7 @@ function saveAjustes() {
     if (!name) continue;
     const points = Number($('.num', row).value);
     if (!Number.isFinite(points) || points < 0) return alert(`Puntos del premio "${name}" inválidos`);
-    rewards.push({ name, points });
+    rewards.push({ name, points, shared: $('.sharedbox input', row).checked });
   }
   rewards.sort((a, b) => a.points - b.points);
   const pinEnabled = $('#pin-enabled').checked;

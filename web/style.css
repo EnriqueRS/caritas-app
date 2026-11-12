@@ -129,6 +129,13 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .rw-pts { font-variant-numeric: tabular-nums; font-size: .82em; white-space: nowrap; }
 .rw-mark { width: 1.3em; height: 1.3em; border-radius: 50%; text-align: center; line-height: 1.3em; font-size: .9em; }
 .rw.ok .rw-mark { background: var(--oro); color: #26190A; font-weight: 700; }
+.rw-shared {
+  font-size: .72em; font-weight: 700; color: var(--oro);
+  border: 1px solid var(--oro); border-radius: 999px; padding: .05em .5em; white-space: nowrap;
+}
+.sharedbox { display: flex; align-items: center; cursor: pointer; color: var(--suave); font-size: .9em; }
+.sharedbox > * + * { margin-left: .25rem; }
+.sharedbox input { width: 1.3em; height: 1.3em; accent-color: var(--oro); }
 
 .rows { margin-top: 1rem; display: flex; flex-direction: column; }
 .cat-row {
