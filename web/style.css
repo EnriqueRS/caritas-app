@@ -365,6 +365,8 @@ button:disabled { opacity: .4; cursor: default; }
   80% { transform: translateX(-2px); }
 }
 .shake { animation: shake .5s ease; border-color: var(--rojo) !important; }
+.flash { border-color: var(--verde) !important; box-shadow: var(--sombra), 0 0 26px var(--verde-glow); }
+.kid, .modal-box { transition: border-color .35s ease, box-shadow .35s ease; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

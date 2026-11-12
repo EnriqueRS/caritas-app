@@ -178,6 +178,14 @@ function shakeKidPanel(kidId) {
   setTimeout(() => target.classList.remove('shake'), 550);
 }
 
+// La cara verde ilumina el borde mientras cae el confeti
+function flashKidPanel(kidId) {
+  const target = modalDay ? modalBox : document.querySelector('.kid[data-kid="' + kidId + '"]');
+  if (!target) return;
+  target.classList.add('flash');
+  setTimeout(() => target.classList.remove('flash'), 1100);
+}
+
 // Reduce una foto a JPEG de 512px antes de subirla
 function shrink(file) {
   return new Promise((resolve, reject) => {
@@ -466,7 +474,7 @@ function extrasBlock(kid, date) {
         ptsIn.value = state.points[2] || 2;
         setSign();
         form.classList.add('hidden');
-        if (choice === 2) confettiAt(cx, cy);
+        if (choice === 2) { confettiAt(cx, cy); flashKidPanel(kid.id); }
         else shakeKidPanel(kid.id);
         refreshViewRecords();
       });
@@ -506,7 +514,7 @@ function catRow(kidId, cat, date) {
         value: val,
         note: cur ? cur.note : '',
       }).then(() => {
-        if (val === 2) confettiAt(cx, cy);
+        if (val === 2) { confettiAt(cx, cy); flashKidPanel(kidId); }
         if (val === 0) shakeKidPanel(kidId);
         refreshViewRecords();
       }));
