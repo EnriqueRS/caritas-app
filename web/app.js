@@ -729,15 +729,16 @@ function renderAjustes() {
   const secPts = section('Puntos y objetivo');
   const ptsRow = node('div', 'pts-row');
   for (const f of FACES) {
-    const lab = node('label', 'field');
-    lab.append(node('span', '', 'Carita ' + f.name));
+    const lab = node('label', 'field pts-field');
+    const face = node('span', 'pts-face light-' + f.value);
+    face.innerHTML = LIGHT_SVG[f.value];
     const inp = node('input', 'num');
     inp.type = 'number';
     inp.step = '1';
     inp.value = state.points[f.value] || 0;
     inp.dataset.pts = f.value;
     inp.oninput = () => { ajustesDirty = true; };
-    lab.append(inp);
+    lab.append(face, inp);
     ptsRow.append(lab);
   }
   secPts.append(ptsRow);
