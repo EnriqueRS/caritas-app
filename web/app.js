@@ -20,6 +20,8 @@ const ICONS = {
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4.5-1L20 7.5a2.1 2.1 0 0 0-3-3L5.5 16z"/><path d="M13.5 6.5l4 4"/></svg>',
   swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10l-3-3M17 16H7l3 3"/></svg>',
+  left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
+  right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
 };
 
 function icon(name) {
@@ -35,7 +37,11 @@ let monthData = { records: [], extras: [] };
 let pin = localStorage.getItem('caritas_pin') || '';
 let pendingFn = null;
 let ajustesDirty = false;
-let modalDay = null; // {date} del editor de día abierto
+let modalDay = null; // {date, kidId} del editor de día abierto
+let viewDate = null; // día mostrado en "Esta noche"
+let viewDateManual = false;
+let viewRecords = [];
+let viewExtras = [];
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -119,7 +125,7 @@ modal.onclick = (e) => { if (e.target === modal) closeModal(); };
 // ---------- Datos ----------
 
 const recordFor = (kidId, catId, date) =>
-  state.records.concat(monthData.records).find((r) => r.kid_id === kidId && r.category_id === catId && r.date === date);
+  state.records.concat(monthData.records).concat(viewRecords).find((r) => r.kid_id === kidId && r.category_id === catId && r.date === date);
 
 function weekPoints(kidId) {
   let sum = 0;
@@ -238,7 +244,8 @@ let lastRenderKey = '';
 function render(force) {
   applyTheme();
   if (!state || !state.kids.length) return;
-  const json = view + '|' + JSON.stringify([state.kids, state.categories, state.records, state.extras, state.points, state.rewards, state.pinEnabled]);
+  syncToday();
+  const json = view + '|' + JSON.stringify([state.kids, state.categories, state.records, state.extras, state.points, state.rewards, state.pinEnabled, viewDate]);
   if (!force && json === lastRenderKey) return; // nada cambió: no repintar (evita parpadeos)
   if (view === 'ajustes' && ajustesDirty) return; // no reconstruir el formulario mientras se edita
   lastRenderKey = json;
@@ -248,11 +255,63 @@ function render(force) {
   else if (view === 'ajustes') renderAjustes();
 }
 
+// sincroniza el día mostrado cuando amanece un nuevo día
+function syncToday() {
+  if (!viewDate) { viewDate = state.today; viewDateManual = false; return; }
+  if (viewDate > state.today) { viewDate = state.today; viewDateManual = false; }
+  if (!viewDateManual && viewDate !== state.today && !modalDay) viewDate = state.today;
+}
+
+// si el día que se está viendo está fuera de la semana en curso, se trae sus registros
+function refreshViewRecords() {
+  if (!viewDate) return;
+  if (viewDate >= state.week.from && viewDate <= state.week.to) { viewRecords = []; viewExtras = []; return; }
+  const from = weekMonday(viewDate);
+  const end = new Date(from + 'T12:00:00Z');
+  end.setUTCDate(end.getUTCDate() + 6);
+  fetch(`/api/history?from=${from}&to=${end.toISOString().slice(0, 10)}`)
+    .then((r) => r.json())
+    .then((data) => {
+      viewRecords = data.records;
+      viewExtras = data.extras || [];
+      if (view === 'hoy') renderHoy();
+    })
+    .catch(() => {});
+}
+
+function shiftDay(delta) {
+  const d = new Date(viewDate + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + delta);
+  const next = d.toISOString().slice(0, 10);
+  if (next > state.today) return; // no días futuros
+  viewDate = next;
+  viewDateManual = viewDate !== state.today;
+  refreshViewRecords();
+  render(true);
+}
+
 function renderHoy() {
   app.textContent = '';
-  app.append(node('p', 'today', dayLabel(state.today)));
+  const navRow = node('div', 'day-nav');
+  const prev = node('button', 'btn icon');
+  prev.append(icon('left'));
+  prev.title = 'Día anterior';
+  prev.onclick = () => shiftDay(-1);
+  const label = node('span', 'today', dayLabel(viewDate));
+  const next = node('button', 'btn icon');
+  next.append(icon('right'));
+  next.title = 'Día siguiente';
+  if (viewDate >= state.today) next.disabled = true;
+  else next.onclick = () => shiftDay(1);
+  navRow.append(prev, label, next);
+  if (viewDate !== state.today) {
+    const hoy = node('button', 'btn small', 'Hoy');
+    hoy.onclick = () => { viewDate = state.today; viewDateManual = false; refreshViewRecords(); render(true); };
+    navRow.append(hoy);
+  }
+  app.append(navRow);
   const grid = node('div', 'kids');
-  state.kids.forEach((kid) => grid.append(kidCard(kid, state.today)));
+  state.kids.forEach((kid) => grid.append(kidCard(kid, viewDate)));
   app.append(grid);
 }
 
@@ -354,14 +413,14 @@ function extrasBlock(kid, date) {
   const wrap = node('div', 'extras');
   wrap.append(node('h3', '', 'Extra (imprevistos)'));
   const list = node('div', 'extra-list');
-  for (const e of (state.extras || []).filter((x) => x.kid_id === kid.id && x.date === date)) {
+  for (const e of (state.extras || []).concat(viewExtras || []).filter((x) => x.kid_id === kid.id && x.date === date)) {
     const item = node('div', 'extra-item');
     const light = node('span', `extra-light light-${e.value}`);
     light.innerHTML = LIGHT_SVG[e.value];
     const del = node('button', 'btn danger icon');
     del.append(icon('x'));
     del.title = 'Quitar';
-    del.onclick = () => withPin(() => api('/api/extra', { id: e.id }, 'DELETE'));
+    del.onclick = () => withPin(() => api('/api/extra', { id: e.id }, 'DELETE').then(() => refreshViewRecords()));
     const cls = e.pts > 0 ? 'g' : e.pts < 0 ? 'r' : 'mu';
     const sign = e.pts > 0 ? '+' : e.pts < 0 ? '−' : '±';
     item.append(light, node('span', 'extra-note', e.note || '(sin motivo)'),
@@ -409,6 +468,7 @@ function extrasBlock(kid, date) {
         form.classList.add('hidden');
         if (choice === 2) confettiAt(cx, cy);
         else shakeKidPanel(kid.id);
+        refreshViewRecords();
       });
   });
   input.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
@@ -448,6 +508,7 @@ function catRow(kidId, cat, date) {
       }).then(() => {
         if (val === 2) confettiAt(cx, cy);
         if (val === 0) shakeKidPanel(kidId);
+        refreshViewRecords();
       }));
     };
     faces.append(b);
