@@ -448,6 +448,8 @@ function extrasBlock(kid, date) {
   bRed.title = 'Roja: resta puntos';
   const wrapPts = node('div', 'ptswrap');
   const minus = node('button', 'pts-step', '−');
+  const mid = node('div', 'pts-mid');
+  const sign = node('span', 'pts-sign g', '+');
   const ptsIn = node('input', 'num');
   ptsIn.type = 'number';
   ptsIn.min = '0';
@@ -459,8 +461,14 @@ function extrasBlock(kid, date) {
   const plus = node('button', 'pts-step', '+');
   plus.onclick = () => { mag += 1; paintPts(); };
   ptsIn.oninput = () => { mag = Math.max(0, Math.round(Number(ptsIn.value) || 0)); };
-  bGreen.onclick = () => { choice = 2; bGreen.classList.add('sel'); bRed.classList.remove('sel'); };
-  bRed.onclick = () => { choice = 0; bRed.classList.add('sel'); bGreen.classList.remove('sel'); };
+  const setSign = () => {
+    sign.textContent = choice === 2 ? '+' : '−';
+    sign.classList.toggle('g', choice === 2);
+    sign.classList.toggle('r', choice === 0);
+  };
+  setSign();
+  bGreen.onclick = () => { choice = 2; bGreen.classList.add('sel'); bRed.classList.remove('sel'); setSign(); };
+  bRed.onclick = () => { choice = 0; bRed.classList.add('sel'); bGreen.classList.remove('sel'); setSign(); };
   const input = node('input', 'note-input');
   input.placeholder = 'Motivo del extra…';
   const save = node('button', 'btn primary small', 'Añadir');
@@ -481,7 +489,8 @@ function extrasBlock(kid, date) {
       });
   });
   input.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
-  wrapPts.append(minus, ptsIn, plus);
+  wrapPts.append(minus, mid, plus);
+  mid.append(sign, ptsIn);
   pick.append(bGreen, bRed);
   form.append(pick, wrapPts, input, save);
 
