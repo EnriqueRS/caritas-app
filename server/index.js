@@ -140,9 +140,31 @@ io.on('connection', (socket) => {
 
 app.use(express.json({ limit: '3mb' }));
 app.use((req, res, next) => { // CORS abierto: la .ipk de la tele carga la web desde el origen de la app
+  console.log('[req]', req.method, req.url);
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
   next();
+});
+
+// index.html sin caché y los fuentes renombrados con su versión al arrancar:
+// cualquier copia cacheada bajo un nombre viejo queda fuera de juego
+const WEB_DIR = path.join(__dirname, '..', 'web');
+const ASSET_VERSION = String(Math.round(Math.max(
+  fs.statSync(path.join(WEB_DIR, 'app.js')).mtimeMs,
+  fs.statSync(path.join(WEB_DIR, 'style.css')).mtimeMs
+)));
+for (const f of ['app.js', 'style.css']) {
+  const origen = path.join(WEB_DIR, f);
+  const versionado = path.join(WEB_DIR, f.replace('.', '.' + ASSET_VERSION + '.'));
+  if (fs.existsSync(origen)) fs.renameSync(origen, versionado);
+}
+app.get('/', (req, res) => {
+  const html = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8')
+    .split('app.js').join('app.' + ASSET_VERSION + '.js')
+    .split('style.css').join('style.' + ASSET_VERSION + '.css');
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.set('Cache-Control', 'no-store');
+  res.send(html);
 });
 
 function requirePin(req, res, next) {
@@ -292,7 +314,18 @@ app.post('/api/config', requirePin, (req, res) => {
   res.json({ ok: true });
 });
 
+// red de seguridad: un índice viejo que pida los nombres sin versión recibe el código nuevo
+app.get('/app.js', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(WEB_DIR, 'app.' + ASSET_VERSION + '.js'));
+});
+app.get('/style.css', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(WEB_DIR, 'style.' + ASSET_VERSION + '.css'));
+});
+
 app.use('/photos', express.static(PHOTO_DIR));
-app.use(express.static(path.join(__dirname, '..', 'web')));
+// no-store para html/js/css: nada de copias viejas de la interfaz; las fotos llevan su ?v= y se cachean normal
+app.use(express.static(path.join(__dirname, '..', 'web'), { setHeaders: (res) => res.set('Cache-Control', 'no-store') }));
 
 server.listen(PORT, () => console.log(`Caritas en el puerto ${PORT}`));
