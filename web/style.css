@@ -166,6 +166,7 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .sharedbox { display: flex; align-items: center; cursor: pointer; color: var(--suave); font-size: .9em; }
 .sharedbox > * + * { margin-left: .25rem; }
 .sharedbox input { width: 1.3em; height: 1.3em; accent-color: var(--oro); }
+.destino { background: var(--panel2); border: 1px solid var(--linea); color: var(--crema); border-radius: 10px; padding: .35em .4em; font: inherit; font-size: .82em; max-width: 11ch; }
 
 .rows { margin-top: 1rem; display: flex; flex-direction: column; }
 .cat-row {

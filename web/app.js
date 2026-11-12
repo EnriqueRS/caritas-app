@@ -314,27 +314,29 @@ function rewardsBlock(kid) {
   const pts = weekPoints(kid.id);
   const pool = state.kids.reduce((s, k) => s + weekPoints(k.id), 0); // puntos de los dos juntos
   const wrap = node('div', 'rewards');
-  const rewards = state.rewards || [];
+  // los premios "solo" de otro peque no aparecen en esta tarjeta
+  const rewards = (state.rewards || []).filter((r) => r.modo !== 'solo' || r.kid === kid.id);
   if (!rewards.length) return wrap;
-  const reached = (r) => (r.shared ? pool : pts) >= r.points;
+  const reached = (r) => (r.modo === 'juntos' ? pool : pts) >= r.points;
   const next = rewards.find((r) => !reached(r));
   for (const r of rewards) {
     const row = node('div', 'rw' + (reached(r) ? ' ok' : ''));
     row.append(node('span', 'rw-name', r.name));
-    if (r.shared) {
+    if (r.modo === 'juntos') {
       const chip = node('span', 'rw-shared');
-      chip.append(icon('swap'), node('span', '', 'compartido'));
+      chip.append(icon('swap'), node('span', '', 'juntos'));
       row.append(chip);
+    } else if (r.modo === 'solo') {
+      const k = state.kids.find((x) => x.id === r.kid);
+      row.append(node('span', 'rw-shared', 'solo ' + (k ? k.name : '')));
     }
     row.append(node('span', 'rw-pts', `${r.points} pts`), node('span', 'rw-mark', reached(r) ? '✓' : '·'));
     wrap.append(row);
   }
-  const base = (() => {
-    const done = rewards.filter(reached);
-    return done.length ? done[done.length - 1].points : 0;
-  })();
+  const done = rewards.filter(reached);
+  const base = done.length ? done[done.length - 1].points : 0;
   const goal = next ? next.points : (rewards[rewards.length - 1] || {}).points || 0;
-  const mine = next && next.shared ? pool : pts;
+  const mine = next && next.modo === 'juntos' ? pool : pts;
   const pct = Math.max(0, Math.min(100, Math.round((100 * (mine - base)) / Math.max(1, goal - base))));
   const fill = node('i');
   fill.style.width = pct + '%';
@@ -343,7 +345,7 @@ function rewardsBlock(kid) {
   bar.append(fill);
   wrap.append(bar);
   wrap.append(node('p', 'reward',
-    next ? `A ${goal - mine} pts de: ${next.name}${next.shared ? ' (compartido, puntúan los dos juntos)' : ''}`
+    next ? `A ${goal - mine} pts de: ${next.name}${next.modo === 'juntos' ? ' (juntos, puntúan los dos)' : ''}`
          : `Máximo conseguido: ${rewards[rewards.length - 1].name}`));
   return wrap;
 }
@@ -709,7 +711,12 @@ function saveConfigNow(extra) {
     if (!name) continue;
     const p = Number($('.num', row).value);
     if (!Number.isFinite(p) || p < 0) return;
-    rewards.push({ name, points: p, shared: $('.sharedbox input', row).checked });
+    const destVal = $('.destino', row).value;
+    let modo = 'cada-uno';
+    let kid = null;
+    if (destVal === 'juntos') modo = 'juntos';
+    else if (destVal.slice(0, 5) === 'solo:') { modo = 'solo'; kid = Number(destVal.slice(5)); }
+    rewards.push({ name, points: p, modo, kid });
   }
   rewards.sort((a, b) => a.points - b.points);
   const pinEnabled = $('#pin-enabled').checked;
@@ -832,13 +839,19 @@ function rowReward(r, isNew) {
   num.value = r.points;
   num.placeholder = 'pts';
   if (!isNew) num.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
-  const sh = node('label', 'sharedbox');
-  const cb = node('input');
-  cb.type = 'checkbox';
-  cb.checked = !!r.shared;
-  cb.title = 'Compartido: se consigue con los puntos de los dos juntos';
-  cb.onchange = () => { ajustesDirty = true; saveConfigNow(); };
-  sh.append(cb, node('span', '', '⇄'));
+  const dest = node('select', 'destino');
+  const cur = r.modo === 'juntos' ? 'juntos' : (r.modo === 'solo' && r.kid ? 'solo:' + r.kid : 'cada-uno');
+  const opciones = [['cada-uno', 'Cada uno'], ['juntos', 'Juntos ⇄']].concat(
+    state.kids.map((k) => ['solo:' + k.id, 'Solo ' + k.name])
+  );
+  for (const [val, label] of opciones) {
+    const o = node('option', '', label);
+    o.value = val;
+    if (val === cur) o.selected = true;
+    dest.append(o);
+  }
+  dest.dataset.focuskey = 'dest-' + (isNew ? 'new' : r.id);
+  dest.onchange = () => { ajustesDirty = true; saveConfigNow(); };
   const del = node('button', 'btn danger icon');
   del.append(icon('x'));
   if (isNew) del.style.visibility = 'hidden';
@@ -847,11 +860,11 @@ function rowReward(r, isNew) {
     del.disabled = true;
     input.disabled = true;
     num.disabled = true;
-    cb.disabled = true;
+    dest.disabled = true;
     ajustesDirty = true;
     saveConfigNow();
   };
-  row.append(input, num, sh, del);
+  row.append(input, num, dest, del);
   return row;
 }
 

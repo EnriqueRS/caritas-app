@@ -62,7 +62,17 @@ const getPoints = () => {
   try { return JSON.parse(getSetting('points')); } catch { return { 2: 2, 1: 1, 0: 0 }; }
 };
 const getRewards = () => {
-  try { return JSON.parse(getSetting('rewards')).sort((a, b) => a.points - b.points); } catch { return []; }
+  try {
+    return JSON.parse(getSetting('rewards')).map((r) => {
+      const modo = ['cada-uno', 'juntos', 'solo'].includes(r.modo) ? r.modo : (r.shared ? 'juntos' : 'cada-uno');
+      return {
+        name: r.name,
+        points: r.points,
+        modo,
+        kid: modo === 'solo' && Number.isFinite(Number(r.kid)) ? Number(r.kid) : null,
+      };
+    }).sort((a, b) => a.points - b.points);
+  } catch { return []; }
 };
 
 // migración: bases de datos creadas antes de existir los premios
@@ -260,11 +270,15 @@ app.post('/api/config', requirePin, (req, res) => {
     }
     if (Array.isArray(rewards)) {
       const list = rewards
-        .map((r) => ({
-          name: String(r?.name || '').trim(),
-          points: Number(r?.points),
-          shared: r?.shared === true,
-        }))
+        .map((r) => {
+          const modo = ['cada-uno', 'juntos', 'solo'].includes(r?.modo) ? r.modo : 'cada-uno';
+          return {
+            name: String(r?.name || '').trim(),
+            points: Number(r?.points),
+            modo,
+            kid: modo === 'solo' && Number.isFinite(Number(r?.kid)) ? Number(r?.kid) : null,
+          };
+        })
         .filter((r) => r.name && Number.isFinite(r.points) && r.points >= 0)
         .sort((a, b) => a.points - b.points);
       setSetting('rewards', JSON.stringify(list));
