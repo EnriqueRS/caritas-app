@@ -505,7 +505,6 @@ function extrasBlock(kid, date) {
 
 function catRow(kidId, cat, date) {
   const row = node('div', 'cat-row');
-  row.append(node('span', 'cat-name', cat.name));
   const faces = node('div', 'faces');
   const rec = recordFor(kidId, cat.id, date);
   for (const f of FACES) {
