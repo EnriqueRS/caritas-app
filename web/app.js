@@ -253,6 +253,8 @@ function render(force) {
   applyTheme();
   if (!state || !state.kids.length) return;
   syncToday();
+  const dn = $('#daynav');
+  if (dn) dn.classList.toggle('hidden', view !== 'hoy');
   const json = view + '|' + JSON.stringify([state.kids, state.categories, state.records, state.extras, state.points, state.rewards, state.pinEnabled, viewDate]);
   if (!force && json === lastRenderKey) return; // nada cambió: no repintar (evita parpadeos)
   if (view === 'ajustes' && ajustesDirty) return; // no reconstruir el formulario mientras se edita
@@ -300,7 +302,18 @@ function shiftDay(delta) {
 
 function renderHoy() {
   app.textContent = '';
-  const navRow = node('div', 'day-nav');
+  paintDayNav();
+  const grid = node('div', 'kids');
+  state.kids.forEach((kid) => grid.append(kidCard(kid, viewDate)));
+  app.append(grid);
+}
+
+// la navegación de días vive en la cabecera, junto al título
+function paintDayNav() {
+  const bar = $('#daynav');
+  if (!bar) return;
+  bar.classList.remove('hidden');
+  bar.textContent = '';
   const prev = node('button', 'btn icon');
   prev.append(icon('left'));
   prev.title = 'Día anterior';
@@ -311,16 +324,12 @@ function renderHoy() {
   next.title = 'Día siguiente';
   if (viewDate >= state.today) next.disabled = true;
   else next.onclick = () => shiftDay(1);
-  navRow.append(prev, label, next);
+  bar.append(prev, label, next);
   if (viewDate !== state.today) {
     const hoy = node('button', 'btn small', 'Hoy');
     hoy.onclick = () => { viewDate = state.today; viewDateManual = false; refreshViewRecords(); render(true); };
-    navRow.append(hoy);
+    bar.append(hoy);
   }
-  app.append(navRow);
-  const grid = node('div', 'kids');
-  state.kids.forEach((kid) => grid.append(kidCard(kid, viewDate)));
-  app.append(grid);
 }
 
 function kidCard(kid, date) {

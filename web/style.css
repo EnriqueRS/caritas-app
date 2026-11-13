@@ -125,8 +125,9 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
 .avatar-thumb { width: 2.2em; height: 2.2em; border-radius: 50%; object-fit: cover; border: 1px solid var(--linea); }
 .avatar-thumb.ph { display: flex; align-items: center; justify-content: center; background: var(--panel2); color: var(--suave); font-size: .85em; }
 
-.day-nav { display: flex; align-items: center; margin-bottom: 1.1rem; }
-.day-nav .today { flex: 1; text-align: center; margin: 0; }
+.day-nav { display: flex; align-items: center; margin: 0; }
+.day-nav.hidden { display: none; }
+.day-nav .today { text-align: center; margin: 0; font-size: .78em; letter-spacing: .12em; }
 .day-nav .btn:disabled { opacity: .35; }
 .week-lamps { display: flex; gap: 7px; gap: .35rem; margin-top: .3rem; align-items: center; }
 .dayl { width: .8em; height: .8em; border-radius: 50%; background: var(--apagado); border: 1px solid var(--linea); }
