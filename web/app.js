@@ -491,7 +491,7 @@ function extrasBlock(kid, date) {
       });
   });
   input.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
-  wrapPts.append(minus, mid, plus);
+  wrapPts.append(plus, mid, minus);
   mid.append(sign, ptsIn);
   pick.append(bGreen, bRed);
   form.append(pick, wrapPts, input, save);
@@ -538,7 +538,7 @@ function catRow(kidId, cat, date) {
   noteBtn.title = 'Nota';
   noteBtn.append(icon('pencil'));
   noteBtn.onclick = () => toggleNoteInput(row, kidId, cat, date, rec);
-  row.append(faces, noteBtn);
+  row.append(noteBtn, node('span', 'cat-name', cat.name), faces);
   return row;
 }
 
