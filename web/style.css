@@ -130,7 +130,7 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
   padding: .25em .7em; margin: 0;
 }
 .day-nav.hidden { display: none; }
-.day-nav .today { text-align: center; margin: 0; font-size: .78em; letter-spacing: .12em; white-space: nowrap; }
+.day-nav .today { text-align: center; margin: 0 0.4em; font-size: .78em; letter-spacing: .12em; white-space: nowrap; }
 .day-nav .btn:disabled { opacity: .35; }
 @media (max-width: 760px) {
   .day-nav { position: static; transform: none; margin: .1em auto; }
