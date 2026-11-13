@@ -534,14 +534,15 @@ function catRow(kidId, cat, date) {
     };
     faces.append(b);
   }
-  const noteBtn = node('button', 'note-btn' + (rec && rec.note ? ' has-note' : ''));
-  noteBtn.title = 'Nota';
-  noteBtn.append(icon('pencil'));
-  noteBtn.onclick = () => toggleNoteInput(row, kidId, cat, date, rec);
-  row.append(noteBtn, node('span', 'cat-name', cat.name), faces);
+  const name = node('span', 'cat-name', cat.name);
+  if (rec && rec.note) name.classList.add('has-note');
+  name.title = rec && rec.note ? 'Nota: ' + rec.note : 'Doble toque para añadir nota';
+  name.onclick = () => toggleNoteInput(row, kidId, cat, date, rec);
+  row.append(name, faces);
   return row;
 }
 
+// la nota de un apartado se edita tocando dos veces su nombre
 function toggleNoteInput(row, kidId, cat, date, rec) {
   const existing = row.parentNode.querySelector('.note-input-row');
   if (existing) { existing.remove(); return; }

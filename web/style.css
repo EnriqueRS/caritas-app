@@ -177,7 +177,8 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
   padding: .5rem 0; border-top: 1px solid var(--fila);
 }
 .cat-row:first-child { border-top: none; }
-.cat-name { font-weight: 600; }
+.cat-name { font-weight: 600; cursor: pointer; }
+.cat-name.has-note { text-decoration: underline dotted var(--oro); text-underline-offset: .25em; }
 
 .faces { display: flex; }
 .face {
