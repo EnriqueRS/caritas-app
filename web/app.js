@@ -308,6 +308,19 @@ function renderHoy() {
   app.append(grid);
 }
 
+// la fecha flota centrada solo si logo + fecha + pestañas caben en una línea;
+// si no, pasa a su propia línea (tabletas y pantallas estrechas)
+function fitDayNav() {
+  const header = document.querySelector('header');
+  const bar = $('#daynav');
+  if (!header || !bar || !state || view !== 'hoy') return;
+  bar.classList.remove('static');
+  const h1 = header.querySelector('h1');
+  const nav = header.querySelector('nav');
+  const total = (h1 ? h1.offsetWidth : 0) + (bar.offsetWidth || 0) + (nav ? nav.offsetWidth : 0) + 90;
+  if (total > header.clientWidth) bar.classList.add('static');
+}
+
 // la navegación de días vive en la cabecera, junto al título
 function paintDayNav() {
   const bar = $('#daynav');
@@ -330,6 +343,7 @@ function paintDayNav() {
     hoy.onclick = () => { viewDate = state.today; viewDateManual = false; refreshViewRecords(); render(true); };
     bar.append(hoy);
   }
+  fitDayNav();
 }
 
 function kidCard(kid, date) {
@@ -1090,6 +1104,8 @@ let socket = { connected: false, on() {} };
 if (typeof io === 'function') {
   try { socket = io(); } catch (e) { /* seguimos con el sondeo */ }
 }
+window.addEventListener('resize', () => { if (view === 'hoy') fitDayNav(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === 'hoy') fitDayNav(); });
 socket.on('state', (s) => {
   state = s;
   if (view === 'hist' && !histMonth) histMonth = monthOf(state.today);
