@@ -385,3 +385,27 @@ button:disabled { opacity: .4; cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   .logo .lamp, .bar-pair .b { animation: none !important; }
 }
+
+/* modo tele: pantallas grandes 16:9 — letras grandes, dos tarjetas, todo cabe sin scroll.
+   Va al final del archivo para ganar a las reglas base de arriba */
+@media (min-width: 1280px) {
+  body { font-size: clamp(20px, 1.35vw, 28px); }
+  header { padding: .4rem 1.4rem; }
+  h1 { font-size: 1.15em; }
+  main { max-width: none; padding: .9rem 1.5rem 1rem; }
+  .kids { grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+  .kid { padding: .9rem 1.2rem; }
+  .kid-head { gap: .6rem; margin-bottom: .4rem; }
+  .avatar { width: 2.4em; height: 2.4em; }
+  .kid-head h2 { font-size: 1.35em; }
+  .score b { font-size: 2.7em; }
+  .rewards { margin: .1rem 0 .6rem; gap: .3rem; }
+  .rw { padding: .2rem .6rem; }
+  .rows { margin-top: .5rem; }
+  .cat-row { padding: .26rem 0; }
+  .face { width: clamp(2.6rem, 2.2vw, 3.2rem); height: clamp(2.6rem, 2.2vw, 3.2rem); }
+  .faces .face + .face { margin-left: .7rem; }
+  .extras { margin-top: .5rem; padding-top: .4rem; }
+  .reward { margin-top: .2rem; font-size: .8em; }
+  .week-lamps { margin-top: .15rem; }
+}

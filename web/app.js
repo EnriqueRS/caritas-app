@@ -305,6 +305,19 @@ function renderHoy() {
   const grid = node('div', 'kids');
   state.kids.forEach((kid) => grid.append(kidCard(kid, viewDate)));
   app.append(grid);
+  fitTV();
+}
+
+// garantía de "sin scroll" en la tele: si aun así el contenido excede la pantalla,
+// se aplica un zoom proporcional (solo en pantallas grandes)
+function fitTV() {
+  if (window.innerWidth < 1200) { document.body.style.zoom = ''; return; }
+  const h = document.documentElement.scrollHeight;
+  if (h > window.innerHeight + 2) {
+    document.body.style.zoom = (window.innerHeight / h).toFixed(3);
+  } else {
+    document.body.style.zoom = '';
+  }
 }
 
 // la fecha flota centrada solo si logo + fecha + pestañas caben en una línea;
@@ -1103,7 +1116,8 @@ let socket = { connected: false, on() {} };
 if (typeof io === 'function') {
   try { socket = io(); } catch (e) { /* seguimos con el sondeo */ }
 }
-window.addEventListener('resize', () => { if (view === 'hoy') fitDayNav(); });
+window.addEventListener('resize', () => { if (view === 'hoy') fitDayNav(); if (state && view === 'hoy') fitTV(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === 'hoy' && state) fitTV(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === 'hoy') fitDayNav(); });
 socket.on('state', (s) => {
   state = s;
