@@ -383,5 +383,5 @@ button:disabled { opacity: .4; cursor: default; }
 .kid, .modal-box { transition: border-color .35s ease, box-shadow .35s ease; }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  .logo .lamp, .bar-pair .b { animation: none !important; }
 }

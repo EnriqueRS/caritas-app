@@ -143,11 +143,10 @@ const monthOf = (today) => {
 const CONFETTI_COLORS = ['#45D183', '#F5C34B', '#F1634C', '#F2EBDB', '#E7B75F'];
 
 function confettiAt(x, y) {
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 30; i++) {
     const p = document.createElement('span');
     p.className = 'confetti';
-    const size = 5 + Math.random() * 6;
+    const size = 6 + Math.random() * 7;
     p.style.width = size + 'px';
     p.style.height = (i % 3 === 0 ? size * .5 : size) + 'px';
     p.style.left = x + 'px';
@@ -156,9 +155,9 @@ function confettiAt(x, y) {
     p.style.borderRadius = i % 2 ? '50%' : '2px';
     document.body.appendChild(p);
     const angle = Math.random() * Math.PI * 2;
-    const dist = 50 + Math.random() * 90;
+    const dist = 55 + Math.random() * 100;
     const dx = Math.cos(angle) * dist;
-    const dy = Math.sin(angle) * dist - 50; // sesgo hacia arriba
+    const dy = Math.sin(angle) * dist - 55; // sesgo hacia arriba
     const rot = Math.round(Math.random() * 720 - 360);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -166,7 +165,7 @@ function confettiAt(x, y) {
         p.style.opacity = '0';
       });
     });
-    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, 950);
+    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, 1150);
   }
 }
 
@@ -1126,4 +1125,5 @@ fetch('/api/state').then((r) => r.json()).then((s) => {
   state = s;
   if (!histMonth) histMonth = monthOf(state.today);
   render();
+  try { console.log('Caritas UI v4 | reduced-motion:', window.matchMedia('(prefers-reduced-motion: reduce)').matches, '| rAF:', typeof requestAnimationFrame); } catch (e) {}
 }).catch(() => {});
