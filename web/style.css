@@ -101,6 +101,8 @@ nav button {
 }
 nav button:hover { color: var(--crema); border-color: var(--crema); }
 nav button.active { background: var(--crema); border-color: var(--crema); color: var(--activo-tinta); }
+nav button[data-view='hoy'] { display: inline-flex; align-items: center; padding: .45em .8em; }
+nav button[data-view='hoy'] .ic { width: 1.35em; height: 1.35em; }
 
 main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px; margin: 0 auto; }
 .today {

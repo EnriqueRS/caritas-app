@@ -15,6 +15,7 @@ const LIGHT_SVG = {
 
 // Iconos de línea (nada de emoticonos)
 const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>',
   camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -237,6 +238,12 @@ function tapOk(key) {
   return true;
 }
 
+// pestañas: la de "Esta noche" es un icono de casa; el resto, texto
+function paintNavIcons() {
+  const hoyBtn = $('nav button[data-view="hoy"]');
+  if (hoyBtn && !hoyBtn.firstChild) hoyBtn.append(icon('home'));
+}
+
 // aplica el tema guardado en Ajustes a toda la página
 function applyTheme() {
   if (!state) return;
@@ -250,6 +257,7 @@ let lastRenderKey = '';
 
 function render(force) {
   applyTheme();
+  paintNavIcons();
   if (!state || !state.kids.length) return;
   syncToday();
   const dn = $('#daynav');
