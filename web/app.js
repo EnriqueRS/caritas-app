@@ -804,7 +804,8 @@ function renderGraf() {
   sec2.append(node('h2', '', 'Reparto de caritas (últimos 30 días)'));
   for (const k of state.kids) {
     const block = node('div', 'stack-kid');
-    const pts30 = rec30.filter((r) => r.kid_id === k.id).reduce((s, r) => s + (state.points[r.value] || 0), 0);
+    const pts30 = rec30.filter((r) => r.kid_id === k.id).reduce((s, r) => s + (state.points[r.value] || 0), 0)
+      + grafExtras.filter((e) => e.kid_id === k.id && e.date >= back.toISOString().slice(0, 10)).reduce((s, e) => s + (e.pts || 0), 0);
     block.append(node('h3', '', `${k.name} — ${pts30} pts en 30 días`));
     for (const cat of state.categories) {
       const c = { 2: 0, 1: 0, 0: 0 };
