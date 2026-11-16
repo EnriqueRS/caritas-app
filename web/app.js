@@ -128,11 +128,26 @@ modal.onclick = (e) => { if (e.target === modal) closeModal(); };
 const recordFor = (kidId, catId, date) =>
   state.records.concat(monthData.records).concat(viewRecords).find((r) => r.kid_id === kidId && r.category_id === catId && r.date === date);
 
+// puntos de un peque en UNA SEMANA dada (por registros ya cargados)
+// base = registros de la semana en curso; extra = registros de la semana vista si es distinta
+function weekPointsIn(records, extras, kidId, from, to) {
+  return records.filter((r) => r.kid_id === kidId && r.date >= from && r.date <= to)
+    .reduce((s, r) => s + (state.points[r.value] || 0), 0)
+    + extras.filter((e) => e.kid_id === kidId && e.date >= from && e.date <= to)
+        .reduce((s, e) => s + (e.pts || 0), 0);
+}
+
 function weekPoints(kidId) {
-  let sum = 0;
-  for (const r of state.records) if (r.kid_id === kidId) sum += state.points[r.value] || 0;
-  for (const e of state.extras || []) if (e.kid_id === kidId) sum += e.pts || 0;
-  return sum;
+  return weekPointsIn(state.records, state.extras || [], kidId, state.week.from, state.week.to);
+}
+
+// puntos de la semana del día que se está viendo (si es distinta de la actual, vienen de viewRecords)
+function viewedWeekPoints(kidId, date) {
+  if (date >= state.week.from && date <= state.week.to) return weekPoints(kidId);
+  const from = weekMonday(date);
+  const end = new Date(from + 'T12:00:00Z');
+  end.setUTCDate(end.getUTCDate() + 6);
+  return weekPointsIn(viewRecords, viewExtras || [], kidId, from, end.toISOString().slice(0, 10));
 }
 
 const monthOf = (today) => {
@@ -291,7 +306,7 @@ function refreshViewRecords() {
     .then((data) => {
       viewRecords = data.records;
       viewExtras = data.extras || [];
-      if (view === 'hoy') renderHoy();
+      if (view === 'hoy') render(true);
     })
     .catch(() => {});
 }
@@ -369,7 +384,7 @@ function paintDayNav() {
 function kidCard(kid, date) {
   const card = node('div', 'kid');
   card.dataset.kid = kid.id;
-  const pts = weekPoints(kid.id);
+  const pts = viewedWeekPoints(kid.id, date);
   const head = node('div', 'kid-head');
   if (kid.photo) {
     const img = node('img', 'avatar');
@@ -383,18 +398,22 @@ function kidCard(kid, date) {
   idBox.append(node('h2', '', kid.name));
   const lamps = node('div', 'week-lamps');
   const maxInPlay = state.categories.length * (state.points[2] || 0);
+  // la semana de las bombillas es la del día que se está viendo
+  const lampFrom = weekMonday(date);
+  const allRecs = state.records.concat(viewRecords || []);
+  const allExtras = (state.extras || []).concat(viewExtras || []);
   for (let i = 0; i < 7; i++) {
-    const d = new Date(state.week.from + 'T12:00:00Z');
+    const d = new Date(lampFrom + 'T12:00:00Z');
     d.setUTCDate(d.getUTCDate() + i);
     const dstr = d.toISOString().slice(0, 10);
-    const marked = state.records.filter((r) => r.kid_id === kid.id && r.date === dstr && r.value !== null);
+    const marked = allRecs.filter((r) => r.kid_id === kid.id && r.date === dstr && r.value !== null);
     let cls = 'dayl';
     // bombilla por puntos del día frente a los que había en juego:
     // verde ≥ 85% del máximo, amarillo ≥ 40%, rojo por debajo (15 en juego: 13-15 / 6-12 / <6).
     // solo se colorea el día completo; los extras suman aunque no estén "en juego"
     if (marked.length === state.categories.length && maxInPlay > 0) {
       const pts = marked.reduce((s, r) => s + (state.points[r.value] || 0), 0)
-        + state.extras.filter((e) => e.kid_id === kid.id && e.date === dstr)
+        + allExtras.filter((e) => e.kid_id === kid.id && e.date === dstr)
             .reduce((s, e) => s + (e.pts || 0), 0);
       const ratio = pts / maxInPlay;
       cls += ratio >= 0.85 ? ' d2' : ratio >= 0.4 ? ' d1' : ' d0';
@@ -411,7 +430,7 @@ function kidCard(kid, date) {
   score.append(node('span', '', 'pts'));
   head.append(score);
   card.append(head);
-  card.append(rewardsBlock(kid));
+  card.append(rewardsBlock(kid, date));
 
   const rows = node('div', 'rows');
   for (const cat of state.categories) rows.append(catRow(kid.id, cat, date));
@@ -420,9 +439,10 @@ function kidCard(kid, date) {
   return card;
 }
 
-function rewardsBlock(kid) {
-  const pts = weekPoints(kid.id);
-  const pool = state.kids.reduce((s, k) => s + weekPoints(k.id), 0); // puntos de los dos juntos
+function rewardsBlock(kid, date) {
+  // premios según la semana del día que se está viendo
+  const pts = viewedWeekPoints(kid.id, date);
+  const pool = state.kids.reduce((s, k) => s + viewedWeekPoints(k.id, date), 0);
   const wrap = node('div', 'rewards');
   // los premios "solo" de otro peque no aparecen en esta tarjeta
   const rewards = (state.rewards || []).filter((r) => r.modo !== 'solo' || r.kid === kid.id);
