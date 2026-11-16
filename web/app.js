@@ -663,18 +663,27 @@ function monthPanel(kid) {
     const cell = node('button', 'cal-cell');
     cell.append(node('span', 'cal-day', String(d)));
     const dots = node('div', 'cal-dots');
+    let ptsDay = 0;
+    let nCaras = 0;
     for (const cat of state.categories) {
       const rec = monthData.records.find((r) => r.kid_id === kid.id && r.category_id === cat.id && r.date === date);
       if (rec && rec.value !== null) {
         const dot = node('span', `dot dot-${rec.value}`);
         dot.title = cat.name;
         dots.append(dot);
+        nCaras++;
       }
+      if (rec) ptsDay += state.points[rec.value] || 0;
     }
     for (const e of monthData.extras) {
       if (e.kid_id === kid.id && e.date === date) {
-        dots.append(node('span', `cal-extra ${e.value === 2 ? 'g' : 'r'}`, e.value === 2 ? '+' : '−'));
+        ptsDay += e.pts || 0;
+        dots.append(node('span', `cal-extra ${e.value === 2 ? 'g' : 'r'}`, (e.pts || 0) > 0 ? '+' : '−'));
       }
+    }
+    if (nCaras > 0 || ptsDay !== 0) {
+      const cls = ptsDay > 0 ? ' g' : ptsDay < 0 ? ' r' : '';
+      dots.append(node('span', 'cal-ptsday' + cls, String(ptsDay)));
     }
     cell.append(dots);
     cell.onclick = () => openDay(date, kid.id);

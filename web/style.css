@@ -296,6 +296,13 @@ button:disabled { opacity: .4; cursor: default; }
 .cal-extra { font-size: .82em; font-weight: 700; line-height: 1; }
 .cal-extra.g { color: var(--verde); }
 .cal-extra.r { color: var(--rojo); }
+.cal-ptsday {
+  font-size: .8em; font-weight: 700; margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.cal-ptsday.g { color: var(--verde); }
+.cal-ptsday.r { color: var(--rojo); }
+.cal-dots { flex-wrap: wrap; }
 
 /* gráficas */
 .graf-sec {
