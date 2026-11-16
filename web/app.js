@@ -721,6 +721,7 @@ function openDay(date, kidId) {
 // ---------- Gráficas ----------
 
 const KID_COLORS = ['#38bdf8', '#f472b6', '#fbbf24', '#34d399'];
+const kidColor = (kid, i) => (kid && kid.color) || KID_COLORS[i % KID_COLORS.length];
 let grafRecords = [];
 let grafExtras = [];
 
@@ -774,7 +775,7 @@ function renderGraf() {
   state.kids.forEach((k, i) => {
     const item = node('span', 'legend-item');
     const dot = node('span', 'legend-dot');
-    dot.style.background = KID_COLORS[i % KID_COLORS.length];
+    dot.style.background = kidColor(k, i);
     item.append(dot, node('span', '', k.name));
     legend.append(item);
   });
@@ -787,7 +788,7 @@ function renderGraf() {
       const v = weeks.get(w)[k.id] || 0;
       const b = node('div', 'b');
       b.style.height = Math.max(2, Math.round((100 * v) / max)) + '%';
-      b.style.background = KID_COLORS[i % KID_COLORS.length];
+      b.style.background = kidColor(k, i);
       b.title = `${k.name}: ${v} pts`;
       pair.append(b);
     });
@@ -874,6 +875,11 @@ function saveConfigNow(extra) {
   }
   rewards.sort((a, b) => a.points - b.points);
   const pinEnabled = $('#pin-enabled').checked;
+  for (const cin of $$('input[data-colorfor]')) {
+    const id = Number(cin.dataset.colorfor);
+    const kid = kids.find((k) => k.id === id);
+    if (kid) kid.color = cin.value;
+  }
   const body = { kids, categories: cats, points, rewards, pinEnabled };
   if (extra && extra.newPin) body.newPin = extra.newPin;
   if (extra && extra.tema) body.tema = extra.tema;
@@ -928,6 +934,14 @@ function rowEdit(kind, id, name, placeholder) {
   row.append(input);
   if (kind === 'kid' && id != null) {
     const kid = state.kids.find((k) => k.id === id);
+    // selector de color para las gráficas
+    const colorIn = node('input', 'color-in');
+    colorIn.type = 'color';
+    colorIn.value = (kid && kid.color) || '#38bdf8';
+    colorIn.title = 'Color en las gráficas';
+    colorIn.dataset.colorfor = id;
+    colorIn.oninput = () => { ajustesDirty = true; scheduleConfigSave(); };
+    row.append(colorIn);
     const cell = node('span', 'photo-cell');
     const file = node('input');
     file.type = 'file';

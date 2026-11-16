@@ -32,6 +32,7 @@ db.exec(`
 `);
 
 try { db.exec('ALTER TABLE kids ADD COLUMN photo TEXT'); } catch { /* ya existe */ }
+try { db.exec('ALTER TABLE kids ADD COLUMN color TEXT'); } catch { /* ya existe */ }
 try { db.exec('ALTER TABLE extras ADD COLUMN pts INTEGER'); } catch { /* ya existe */ }
 
 const DEFAULT_REWARDS = [
@@ -267,7 +268,7 @@ app.post('/api/photo/:id/remove', requirePin, (req, res) => {
 app.post('/api/config', requirePin, (req, res) => {
   const { kids, categories, points, rewards, newPin, pinEnabled, tema } = req.body;
 
-  const syncRows = (rows, table) => {
+  const syncRows = (rows, table, extraCols) => {
     if (!Array.isArray(rows)) return;
     const ins = db.prepare(`INSERT INTO ${table} (name, sort) VALUES (?, ?)`);
     const upd = db.prepare(`UPDATE ${table} SET name = ?, sort = ? WHERE id = ?`);
@@ -282,10 +283,19 @@ app.post('/api/config', requirePin, (req, res) => {
       else ins.run(name, i);
     });
     before.filter((id) => !kept.includes(id)).forEach((id) => del.run(id));
+    // columnas opcionales (p. ej. kids.color)
+    if (extraCols) {
+      const setCol = db.prepare(`UPDATE ${table} SET ${extraCols.col} = ? WHERE id = ?`);
+      for (const row of rows) {
+        const id = Number(row.id);
+        const val = extraCols.get(row);
+        if (id && val != null) setCol.run(val, id);
+      }
+    }
   };
 
   db.transaction(() => {
-    syncRows(kids, 'kids');
+    syncRows(kids, 'kids', { col: 'color', get: (row) => (row.color && /^#[0-9a-fA-F]{6}$/.test(row.color) ? row.color : null) });
     syncRows(categories, 'categories');
     if (points && [2, 1, 0].every((v) => Number.isFinite(Number(points[v])))) {
       setSetting('points', JSON.stringify({ 2: Number(points[2]), 1: Number(points[1]), 0: Number(points[0]) }));
