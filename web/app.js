@@ -281,10 +281,12 @@ function render(force) {
   if (!force && json === lastRenderKey) return; // nada cambió: no repintar (evita parpadeos)
   if (view === 'ajustes' && ajustesDirty) return; // no reconstruir el formulario mientras se edita
   lastRenderKey = json;
+  const sy = window.scrollY; // el repintado no debe mover la posición de scroll (móvil)
   if (view === 'hoy') renderHoy();
   else if (view === 'hist') renderHist();
   else if (view === 'graf') renderGraf();
   else if (view === 'ajustes') renderAjustes();
+  if (window.scrollY !== sy) window.scrollTo(0, sy);
 }
 
 // sincroniza el día mostrado cuando amanece un nuevo día
