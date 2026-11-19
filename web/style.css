@@ -8,6 +8,18 @@
   font-display: swap;
 }
 @font-face {
+  font-family: 'Orbitron';
+  src: url('fonts/orbitron-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('fonts/orbitron-800.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
   font-family: 'Nunito';
   src: url('fonts/nunito-400.woff2') format('woff2');
   font-weight: 400;
@@ -86,6 +98,8 @@ h1 {
   font-size: 1.3em; margin: 0; display: flex; align-items: center; gap: .3em;
   text-transform: uppercase; letter-spacing: .06em; color: var(--crema);
 }
+.brand { font-family: 'Orbitron', 'Bungee', sans-serif; font-weight: 800; letter-spacing: .05em; }
+.brand em { font-style: normal; color: var(--oro); margin-left: .1em; }
 .logo { height: 2.6em; width: auto; }
 .logo .lamp { animation: lamp 4.2s ease-in-out infinite; }
 .logo .ll1 { animation-delay: 1.4s; }
