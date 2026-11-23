@@ -399,7 +399,7 @@ function kidCard(kid, date) {
   const idBox = node('div', 'kid-id');
   idBox.append(node('h2', '', kid.name));
   const lamps = node('div', 'week-lamps');
-  const maxInPlay = state.categories.length * (state.points[2] || 0);
+  const maxInPlay = state.points[2] || 0;
   // la semana de las bombillas es la del día que se está viendo
   const lampFrom = weekMonday(date);
   const allRecs = state.records.concat(viewRecords || []);
@@ -410,19 +410,22 @@ function kidCard(kid, date) {
     const dstr = d.toISOString().slice(0, 10);
     const marked = allRecs.filter((r) => r.kid_id === kid.id && r.date === dstr && r.value !== null);
     let cls = 'dayl';
-    // bombilla por puntos del día frente a los que había en juego:
-    // verde ≥ 85% del máximo, amarillo ≥ 40%, rojo por debajo (15 en juego: 13-15 / 6-12 / <6).
-    // solo se colorea el día completo; los extras suman aunque no estén "en juego"
-    if (marked.length === state.categories.length && maxInPlay > 0) {
+    // bombilla por puntos del día frente a lo que había en juego HOY:
+    // el máximo es solo de los apartados calificados (Deberes puede no ponerse un día),
+    // verde ≥ 85%, amarillo ≥ 40%, rojo por debajo; los extras suman
+    const ptsVerde = state.points[2] || 0;
+    if (marked.length > 0 && maxInPlay > 0) {
+      const maxHoy = marked.length * maxInPlay;
       const pts = marked.reduce((s, r) => s + (state.points[r.value] || 0), 0)
         + allExtras.filter((e) => e.kid_id === kid.id && e.date === dstr)
             .reduce((s, e) => s + (e.pts || 0), 0);
-      const ratio = pts / maxInPlay;
+      const ratio = pts / maxHoy;
       cls += ratio >= 0.85 ? ' d2' : ratio >= 0.4 ? ' d1' : ' d0';
     } else if (dstr === state.today) cls += ' dt';
+    const faltan = state.categories.filter((c) => !marked.some((r) => r.category_id === c.id));
     const lamp = node('span', cls);
     lamp.title = new Date(dstr + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })
-      + (marked.length === state.categories.length ? '' : ' · sin completar');
+      + (marked.length === 0 ? ' · sin marcar' : (faltan.length ? ' · sin: ' + faltan.map((c) => c.name).join(', ') : ''));
     lamps.append(lamp);
   }
   idBox.append(lamps);
