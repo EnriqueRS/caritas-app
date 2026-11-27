@@ -135,7 +135,7 @@ main { padding: 16px 20px; padding: clamp(1rem, 2.5vw, 2rem); max-width: 1500px;
   font-family: 'Bungee', 'Arial Black', sans-serif; font-weight: 400;
   margin: 0; font-size: 1.15em; letter-spacing: .04em; text-transform: uppercase;
 }
-.avatar { width: 3em; height: 3em; border-radius: 50%; object-fit: cover; border: 2px solid var(--linea); }
+.avatar { width: 6em; height: 6em; border-radius: 50%; object-fit: cover; border: 2px solid var(--linea); }
 .avatar.ph { display: flex; align-items: center; justify-content: center; background: var(--panel2); color: var(--suave); font-family: 'Bungee', sans-serif; }
 .photo-cell { display: flex; align-items: center; gap: .35rem; }
 .avatar-thumb { width: 2.2em; height: 2.2em; border-radius: 50%; object-fit: cover; border: 1px solid var(--linea); }
@@ -420,7 +420,7 @@ button:disabled { opacity: .4; cursor: default; }
   .kids { grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
   .kid { padding: .9rem 1.2rem; }
   .kid-head { gap: .6rem; margin-bottom: .4rem; }
-  .avatar { width: 2.4em; height: 2.4em; }
+  .avatar { width: 4.8em; height: 4.8em; }
   .kid-head h2 { font-size: 1.35em; }
   .score b { font-size: 2.7em; }
   .rewards { margin: .1rem 0 .6rem; gap: .3rem; }
