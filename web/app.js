@@ -204,26 +204,26 @@ function cryAt(panel) {
   const cy = r.top + r.height / 2;
   for (let burst = 0; burst < 3; burst++) {
     setTimeout(() => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 9; i++) {
         const tear = document.createElement('span');
         tear.className = 'tear';
-        const size = 8 + Math.random() * 6;
+        const size = 8 + Math.random() * 7;
         tear.style.width = size * 0.75 + 'px';
         tear.style.height = size + 'px';
-        tear.style.left = (cx + (Math.random() * 18 - 9)) + 'px';
-        tear.style.top = (cy + (Math.random() * 14 - 7)) + 'px';
+        tear.style.left = (cx + (Math.random() * 26 - 13)) + 'px';
+        tear.style.top = (cy + (Math.random() * 18 - 9)) + 'px';
         document.body.appendChild(tear);
-        const dx = (Math.random() * 20 - 10);
-        const dy = r.height * 0.6 + 70 + Math.random() * 80;
+        const dx = (Math.random() * 26 - 13);
+        const dy = r.height * 0.6 + 110 + Math.random() * 130;
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             tear.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.85)';
             tear.style.opacity = '0';
           });
         });
-        setTimeout(() => { if (tear.parentNode) tear.parentNode.removeChild(tear); }, 1250);
+        setTimeout(() => { if (tear.parentNode) tear.parentNode.removeChild(tear); }, 1900);
       }
-    }, burst * 260);
+    }, burst * 420);
   }
 }
 
