@@ -195,57 +195,79 @@ function shakeKidPanel(kidId) {
   crySound();
 }
 
-// Lágrimas desde la foto del peque: gotas azules que nacen bajo el avatar y caen con vaivén
+// Lágrimas desde el centro de la foto del peque: 3 borbotones seguidos
 function cryAt(panel) {
   const foto = panel.querySelector('.avatar');
   if (!foto) { console.warn('[Caritas] lágrimas: sin foto todavía (avatar no encontrado)'); return; }
   const r = foto.getBoundingClientRect();
-  const n = 6 + Math.floor(Math.random() * 4);
-  for (let i = 0; i < n; i++) {
-    const tear = document.createElement('span');
-    tear.className = 'tear';
-    const size = 8 + Math.random() * 6;
-    tear.style.width = size * 0.75 + 'px';
-    tear.style.height = size + 'px';
-    tear.style.left = (r.left + r.width * (0.2 + Math.random() * 0.6)) + 'px';
-    tear.style.top = (r.bottom - size * 0.3) + 'px';
-    document.body.appendChild(tear);
-    const dx = (Math.random() * 16 - 8);
-    const dy = r.height * 0.5 + 60 + Math.random() * 70;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        tear.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.85)';
-        tear.style.opacity = '0';
-      });
-    });
-    setTimeout(() => { if (tear.parentNode) tear.parentNode.removeChild(tear); }, 1250);
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  for (let burst = 0; burst < 3; burst++) {
+    setTimeout(() => {
+      for (let i = 0; i < 5; i++) {
+        const tear = document.createElement('span');
+        tear.className = 'tear';
+        const size = 8 + Math.random() * 6;
+        tear.style.width = size * 0.75 + 'px';
+        tear.style.height = size + 'px';
+        tear.style.left = (cx + (Math.random() * 18 - 9)) + 'px';
+        tear.style.top = (cy + (Math.random() * 14 - 7)) + 'px';
+        document.body.appendChild(tear);
+        const dx = (Math.random() * 20 - 10);
+        const dy = r.height * 0.6 + 70 + Math.random() * 80;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            tear.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.85)';
+            tear.style.opacity = '0';
+          });
+        });
+        setTimeout(() => { if (tear.parentNode) tear.parentNode.removeChild(tear); }, 1250);
+      }
+    }, burst * 260);
   }
 }
 
-// Llanto sintetizado: tres sollosos descendentes "iu-iu-iu" con osciladores Web Audio
+// Llanto sintetizado más largo y creíble: dos olas de sollozos + protesta final.
+// Cada sollozo: ataque suave "uh", subida llorosa y caída con vibrato (tremolo con LFO).
 let audioCtx = null;
+function sollozo(start, basePitch, dur, gainPico) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(basePitch * 0.8, start);
+  osc.frequency.exponentialRampToValueAtTime(basePitch * 1.25, start + dur * 0.25);
+  osc.frequency.exponentialRampToValueAtTime(basePitch * 0.65, start + dur);
+  // vibrato de llanto (±30 Hz, lento)
+  lfo.frequency.value = 5.5;
+  lfoGain.gain.value = 28;
+  lfo.connect(lfoGain).connect(osc.frequency);
+  const env = gain.gain;
+  env.setValueAtTime(0.0001, start);
+  env.exponentialRampToValueAtTime(gainPico, start + 0.07);
+  env.setValueAtTime(gainPico, start + dur * 0.55);
+  env.exponentialRampToValueAtTime(0.001, start + dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(start); lfo.start(start);
+  osc.stop(start + dur + 0.02); lfo.stop(start + dur + 0.02);
+}
 function crySound() {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const t0 = audioCtx.currentTime;
-    for (let i = 0; i < 3; i++) {
-      const start = t0 + i * 0.38;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sawtooth';
-      // sube al sollozo y baja: "iu-U"
-      osc.frequency.setValueAtTime(560, start);
-      osc.frequency.linearRampToValueAtTime(760, start + 0.12);
-      osc.frequency.linearRampToValueAtTime(420, start + 0.30);
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.16, start + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(start);
-      osc.stop(start + 0.34);
-    }
-  } catch (e) { /* sin audio disponible (navegador muy viejo): se pierde el llanto, no la marca */ }
+    // ola 1: tres sollosos, uno un pelín más agudo que el anterior
+    sollozo(t0, 520, 0.38, 0.13);
+    sollozo(t0 + 0.55, 580, 0.4, 0.14);
+    sollozo(t0 + 1.15, 640, 0.42, 0.15);
+    // pausa entrecortada (respiración)
+    // ola 2: dos sollosos más graves, ya quejándose
+    sollozo(t0 + 2.1, 540, 0.45, 0.12);
+    sollozo(t0 + 2.75, 500, 0.5, 0.11);
+    // protesta final más larga y quejumbrosa
+    sollozo(t0 + 3.6, 610, 0.75, 0.12);
+  } catch (e) { /* sin audio disponible: se pierde el llanto, no la marca */ }
 }
 
 // La cara verde ilumina el borde mientras cae el confeti
