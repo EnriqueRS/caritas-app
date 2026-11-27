@@ -191,6 +191,61 @@ function shakeKidPanel(kidId) {
   if (!target) return;
   target.classList.add('shake');
   setTimeout(() => target.classList.remove('shake'), 550);
+  cryAt(target);
+  crySound();
+}
+
+// Lágrimas desde la foto del peque: gotas azules que nacen bajo el avatar y caen con vaivén
+function cryAt(panel) {
+  const foto = panel.querySelector('.avatar');
+  if (!foto) { console.warn('[Caritas] lágrimas: sin foto todavía (avatar no encontrado)'); return; }
+  const r = foto.getBoundingClientRect();
+  const n = 6 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < n; i++) {
+    const tear = document.createElement('span');
+    tear.className = 'tear';
+    const size = 8 + Math.random() * 6;
+    tear.style.width = size * 0.75 + 'px';
+    tear.style.height = size + 'px';
+    tear.style.left = (r.left + r.width * (0.2 + Math.random() * 0.6)) + 'px';
+    tear.style.top = (r.bottom - size * 0.3) + 'px';
+    document.body.appendChild(tear);
+    const dx = (Math.random() * 16 - 8);
+    const dy = r.height * 0.5 + 60 + Math.random() * 70;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        tear.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.85)';
+        tear.style.opacity = '0';
+      });
+    });
+    setTimeout(() => { if (tear.parentNode) tear.parentNode.removeChild(tear); }, 1250);
+  }
+}
+
+// Llanto sintetizado: tres sollosos descendentes "iu-iu-iu" con osciladores Web Audio
+let audioCtx = null;
+function crySound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t0 = audioCtx.currentTime;
+    for (let i = 0; i < 3; i++) {
+      const start = t0 + i * 0.38;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      // sube al sollozo y baja: "iu-U"
+      osc.frequency.setValueAtTime(560, start);
+      osc.frequency.linearRampToValueAtTime(760, start + 0.12);
+      osc.frequency.linearRampToValueAtTime(420, start + 0.30);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.16, start + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 0.34);
+    }
+  } catch (e) { /* sin audio disponible (navegador muy viejo): se pierde el llanto, no la marca */ }
 }
 
 // La cara verde ilumina el borde mientras cae el confeti

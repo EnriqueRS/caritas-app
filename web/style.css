@@ -395,6 +395,14 @@ button:disabled { opacity: .4; cursor: default; }
   position: fixed; width: 8px; height: 8px; z-index: 30; pointer-events: none;
   transition: transform .85s cubic-bezier(.15, .6, .35, 1), opacity .85s ease-in;
 }
+.tear {
+  position: fixed; z-index: 30; pointer-events: none;
+  background: radial-gradient(circle at 30% 25%, #a5e8ff 12%, #4aa8e8 70%);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: inset 0 -2px 4px rgba(10, 40, 80, .5);
+  opacity: .95;
+  transition: transform 1.1s cubic-bezier(.4, .05, .8, .6), opacity 1.1s ease-in;
+}
 @keyframes shake {
   12% { transform: translateX(-7px); }
   28% { transform: translateX(6px); }
